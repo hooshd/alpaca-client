@@ -1,0 +1,35 @@
+{
+  "name": "alpaca-trading-interface",
+  "version": "1.0.0",
+  "description": "Alpaca Trading Account Interface",
+  "main": "dist/backend/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "npm run build && concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "node --loader ts-node/esm dist/backend/server.js",
+    "start:frontend": "npx tailwindcss -i ./src/frontend/styles.css -o ./dist/styles.css --watch",
+    "build": "tsc && npx tailwindcss -i ./src/frontend/styles.css -o ./dist/styles.css && cp src/frontend/index.html dist/index.html",
+    "dev": "concurrently \"npm:watch:ts\" \"npm:watch:tailwind\" \"npm:watch:html\" \"npm:browser-sync\" \"npm:start:backend\"",
+    "watch:ts": "tsc -w",
+    "watch:tailwind": "npx tailwindcss -i ./src/frontend/styles.css -o ./dist/styles.css --watch",
+    "watch:html": "nodemon --watch src/frontend/index.html --exec 'cp src/frontend/index.html dist/index.html'",
+    "browser-sync": "browser-sync start --server dist --files 'dist/**/*' --no-open"
+  },
+  "dependencies": {
+    "@alpacahq/alpaca-trade-api": "^3.1.2",
+    "date-fns-tz": "^3.2.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^8.2.3",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.9.0",
+    "browser-sync": "^3.0.3",
+    "concurrently": "^9.1.0",
+    "nodemon": "^3.1.7",
+    "tailwindcss": "^3.4.15",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
