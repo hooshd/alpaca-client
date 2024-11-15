@@ -1,7 +1,5 @@
 // Alpaca Trading Interface Frontend
 
-import { format, toZonedTime } from 'date-fns-tz';
-
 interface Position {
     symbol: string;
     quantity: number;
@@ -32,7 +30,6 @@ class AlpacaTradingApp {
                 this.fetchAccountInfo(),
                 this.initializeMarketTime()
             ]);
-            this.updateLastUpdated();
         } catch (error) {
             this.handleError(error);
         }
@@ -47,15 +44,16 @@ class AlpacaTradingApp {
     }
 
     private getUSEasternTime(): Date {
-        return toZonedTime(new Date(), 'America/New_York');
+        return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
     }
 
     private formatTime(date: Date): string {
-        return format(date, 'HH:mm:ss', { timeZone: 'America/New_York' });
-    }
-
-    private formatLastUpdated(date: Date): string {
-        return format(date, 'dd MMM yyyy at HH:mm:ss', { timeZone: 'America/New_York' });
+        return date.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
     }
 
     private determineMarketStatus(time: Date): { 
@@ -269,27 +267,6 @@ class AlpacaTradingApp {
         return formattedValue;
     }
 
-    private updateLastUpdated() {
-        const lastUpdatedElement = document.getElementById('last-updated');
-        if (lastUpdatedElement) {
-            const now = this.getUSEasternTime();
-            lastUpdatedElement.textContent = `Last updated: ${this.formatLastUpdated(now)}`;
-        }
-    }
-
-    public async handleUpdateButtonClick() {
-        try {
-            await Promise.all([
-                this.fetchBalance(),
-                this.fetchPositions(),
-                this.fetchAccountInfo()
-            ]);
-            this.updateLastUpdated();
-        } catch (error) {
-            this.handleError(error);
-        }
-    }
-
     // Clean up interval when the app is potentially destroyed
     public cleanup() {
         if (this.marketTimeInterval) {
@@ -300,11 +277,7 @@ class AlpacaTradingApp {
 
 // Initialize the app when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new AlpacaTradingApp();
-    const updateButton = document.getElementById('updateButton');
-    if (updateButton) {
-        updateButton.addEventListener('click', () => app.handleUpdateButtonClick());
-    }
+    new AlpacaTradingApp();
 });
 
 export {};  // Ensure this is a module
