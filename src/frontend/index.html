@@ -1,52 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Alpaca Trading Interface</title>
-    <link href="/styles.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
+    <link href="/styles.css" rel="stylesheet" />
+  </head>
+  <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
     <div id="app" class="w-full max-w-md bg-white shadow-md rounded-lg p-6">
-        <h1 class="text-2xl font-bold mb-4 text-center">Alpaca Dashboard</h1>
-        
-        <section id="account-info" class="mb-4">
-            <h2 class="text-lg font-semibold">Account Info</h2>
-            <div class="grid grid-cols-2 gap-2 text-sm">
-                <div class="font-medium">User ID:</div>
-                <div id="accountId" class="text-right">Loading...</div>
-                <div class="font-medium">Account Number:</div>
-                <div id="accountNumber" class="text-right">Loading...</div>
-                <div class="font-medium">Cash Balance:</div>
-                <div id="cashBalance" class="text-right text-alpaca-green">Loading...</div>
-                <div class="font-medium">Buying Power:</div>
-                <div id="buyingPower" class="text-right text-alpaca-blue">Loading...</div>
-            </div>
-        </section>
+      <h1 class="text-2xl font-bold mb-4 text-center">Alpaca Dashboard</h1>
 
-        <section id="balance" class="mb-4">
-            <h2 class="text-lg font-semibold">Current Balance</h2>
-            <div id="balanceValue" class="text-2xl font-bold text-alpaca-green">Loading...</div>
-        </section>
+      <section id="account-info" class="mb-4">
+        <h2 class="text-lg font-semibold">Account Info</h2>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="font-medium">User ID:</div>
+          <div id="accountId" class="text-right">Loading...</div>
+          <div class="font-medium">Account Number:</div>
+          <div id="accountNumber" class="text-right">Loading...</div>
+          <div class="font-medium">Cash Balance:</div>
+          <div id="cashBalance" class="text-right text-alpaca-green">Loading...</div>
+          <div class="font-medium">Buying Power:</div>
+          <div id="buyingPower" class="text-right text-alpaca-blue">Loading...</div>
+        </div>
+      </section>
 
-        <section id="market-time" class="mb-4 p-4 rounded-lg bg-gray-200">
-            <div id="market-time-block" class="text-2xl font-mono font-bold mb-2">Market Time: Loading...</div>
-            <div id="market-status" class="px-3 py-1 rounded text-white font-semibold bg-alpaca-blue">
-                The market is: Loading...
-            </div>
-            <div id="market-next-status" class="text-sm text-gray-600 mt-2">
-                Market closes at...
-            </div>
-        </section>
+      <button
+        id="update-all-button"
+        class="w-full bg-blue-300 text-white py-2 rounded mb-4 hover:bg-blue-500 transition-colors duration-300 ease-in-out shadow-sm hover:shadow-md"
+      >
+        Update All
+      </button>
+      <section id="balance" class="mb-4">
+        <h2 class="text-lg font-semibold">Current Balance</h2>
+        <div id="balanceValue" class="text-2xl font-bold text-alpaca-green">Loading...</div>
+      </section>
 
-        <section id="positions" class="mb-4">
-            <h2 class="text-lg font-semibold">Positions</h2>
-            <div id="positionsList" class="space-y-2">
-                <!-- Positions will be dynamically populated here -->
-            </div>
-        </section>
+      <section id="market-time" class="mb-4 p-4 rounded-lg bg-gray-200">
+        <div id="market-time-block" class="text-2xl font-mono font-bold mb-2">Market Time: Loading...</div>
+        <div id="market-status" class="px-3 py-1 rounded text-white font-semibold bg-alpaca-blue">
+          The market is: Loading...
+        </div>
+        <div id="market-next-status" class="text-sm text-gray-600 mt-2">Market closes at...</div>
+      </section>
+
+      <section id="positions" class="mb-4">
+        <h2 class="text-lg font-semibold">Positions</h2>
+        <div id="positionsList" class="space-y-2">
+          <!-- Positions will be dynamically populated here -->
+        </div>
+      </section>
     </div>
 
     <script type="module" src="/frontend/app.js"></script>
-</body>
+  </body>
 </html>

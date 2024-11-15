@@ -124,3 +124,27 @@ async function closePosition(symbol?: string) {
         handleError(error);
     }
 }
+
+export async function updateAllData() {
+  try {
+      const updateButton = document.getElementById('update-all-button');
+      if (updateButton) {
+          updateButton.classList.add('opacity-50', 'cursor-not-allowed');
+          updateButton.setAttribute('disabled', 'true');
+      }
+
+      await Promise.all([
+          fetchAccountInfo(),
+          fetchBalance(),
+          fetchPositions()
+      ]);
+  } catch (error) {
+      handleError(error);
+  } finally {
+      const updateButton = document.getElementById('update-all-button');
+      if (updateButton) {
+          updateButton.classList.remove('opacity-50', 'cursor-not-allowed');
+          updateButton.removeAttribute('disabled');
+      }
+  }
+}
