@@ -11,6 +11,25 @@ export function formatTime(date: Date): string {
     });
 }
 
+export function calculateTimeAgo(lastUpdatedTime: Date): string {
+    const now = getUSEasternTime();
+    const diffMs = now.getTime() - lastUpdatedTime.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffSeconds < 60) {
+        return `${diffSeconds} second${diffSeconds !== 1 ? 's' : ''} ago`;
+    } else if (diffMinutes < 60) {
+        return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+    } else if (diffHours < 24) {
+        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else {
+        return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    }
+}
+
 export function determineMarketStatus(time: Date): { 
     status: 'OPEN' | 'EXTENDED' | 'CLOSED', 
     nextStatus: string 
@@ -65,6 +84,7 @@ export function initializeMarketTime() {
         const marketTimeBlockElement = document.getElementById('market-time-block');
         const marketStatusElement = document.getElementById('market-status');
         const marketNextStatusElement = document.getElementById('market-next-status');
+        const lastUpdatedTimeElement = document.getElementById('last-updated-time');
 
         if (marketTimeBlockElement) {
             marketTimeBlockElement.textContent = `Market Time: ${formatTime(now)}`;
@@ -93,6 +113,16 @@ export function initializeMarketTime() {
             }
 
             marketNextStatusElement.textContent = nextStatus;
+        }
+
+        // Update last updated time ago
+        if (lastUpdatedTimeElement && lastUpdatedTimeElement.dataset.lastUpdated) {
+            const lastUpdatedDate = new Date(lastUpdatedTimeElement.dataset.lastUpdated);
+            const timeAgo = calculateTimeAgo(lastUpdatedDate);
+            
+            // Split the original text to preserve the timestamp
+            const originalText = lastUpdatedTimeElement.textContent?.split(' (')[0] || '';
+            lastUpdatedTimeElement.textContent = `${originalText} (${timeAgo})`;
         }
     }
 

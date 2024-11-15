@@ -15,11 +15,18 @@ function formatUSEasternTime(date: Date = new Date()): string {
   }).format(date);
 }
 
+// Function to get US Eastern Time as Date
+function getUSEasternTime(): Date {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+}
+
 // Function to update the last updated time
 function updateLastUpdatedTime() {
   const lastUpdatedTimeElement = document.getElementById('last-updated-time');
   if (lastUpdatedTimeElement) {
-    lastUpdatedTimeElement.textContent = formatUSEasternTime();
+    const now = getUSEasternTime();
+    lastUpdatedTimeElement.textContent = formatUSEasternTime(now);
+    lastUpdatedTimeElement.setAttribute('data-last-updated', now.toISOString());
   }
 }
 
