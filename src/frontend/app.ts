@@ -106,12 +106,12 @@ class AlpacaTradingApp {
 
     private updateMarketTimeAndStatus() {
         const now = this.getUSEasternTime();
-        const digitalTimeElement = document.getElementById('digital-time');
+        const marketTimeBlockElement = document.getElementById('market-time-block');
         const marketStatusElement = document.getElementById('market-status');
         const marketNextStatusElement = document.getElementById('market-next-status');
 
-        if (digitalTimeElement) {
-            digitalTimeElement.textContent = this.formatTime(now);
+        if (marketTimeBlockElement) {
+            marketTimeBlockElement.textContent = `Market Time: ${this.formatTime(now)}`;
         }
 
         if (marketStatusElement && marketNextStatusElement) {
