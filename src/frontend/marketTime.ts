@@ -209,6 +209,7 @@ export function initializeMarketTime() {
         const marketTimeBlockElement = document.getElementById('market-time-block');
         const marketStatusElement = document.getElementById('market-status');
         const marketNextStatusElement = document.getElementById('market-next-status');
+        const lastUpdatedTimeElement = document.getElementById('last-updated-time');
 
         if (marketTimeBlockElement) {
             marketTimeBlockElement.textContent = `Market Time: ${formatTime(now)}`;
@@ -237,6 +238,15 @@ export function initializeMarketTime() {
             }
 
             marketNextStatusElement.textContent = nextStatus;
+        }
+
+        if (lastUpdatedTimeElement && lastUpdatedTimeElement.dataset.lastUpdated) {
+            const lastUpdatedDate = new Date(lastUpdatedTimeElement.dataset.lastUpdated);
+            const timeAgo = calculateTimeAgo(lastUpdatedDate);
+            
+            // Split the original text to preserve the timestamp
+            const originalText = lastUpdatedTimeElement.textContent?.split(' (')[0] || '';
+            lastUpdatedTimeElement.textContent = `${originalText} (${timeAgo})`;
         }
     }
 
