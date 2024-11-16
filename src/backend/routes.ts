@@ -1,6 +1,6 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import { createAlpacaClient } from './alpacaClient';
-import { AlpacaPosition, BalanceResponse, PositionResponse, AccountResponse, OrderResponse } from './types';
+import { AlpacaPosition, BalanceResponse, PositionResponse, AccountResponse, CreateOrderRequest, OrderResponse } from './types';
 
 export const setupRoutes = (app: Express) => {
   const alpaca = createAlpacaClient();
@@ -141,6 +141,105 @@ export const setupRoutes = (app: Express) => {
         return;
       }
 
+      next(error);
+    }
+  });
+
+  // New route for creating orders
+  app.post('/api/orders/create', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      console.log('Handling /api/orders/create request');
+      
+      // Destructure and validate required fields
+      const { 
+        symbol, 
+        side, 
+        type, 
+        time_in_force, 
+        qty, 
+        notional, 
+        limit_price, 
+        stop_price,
+        trail_price,
+        trail_percent,
+        extended_hours = false,
+        client_order_id
+      }: CreateOrderRequest = req.body;
+
+      // Validate required fields
+      if (!symbol) {
+        res.status(400).json({ success: false, message: 'Symbol is required' });
+        return;
+      }
+
+      if (!side) {
+        res.status(400).json({ success: false, message: 'Side is required' });
+        return;
+      }
+
+      if (!type) {
+        res.status(400).json({ success: false, message: 'Order type is required' });
+        return;
+      }
+
+      if (!time_in_force) {
+        res.status(400).json({ success: false, message: 'Time in force is required' });
+        return;
+      }
+
+      // Prepare order parameters
+      const orderParams: any = {
+        symbol,
+        side,
+        type,
+        time_in_force,
+        extended_hours
+      };
+
+      // Add optional parameters
+      if (qty) orderParams.qty = qty;
+      if (notional) orderParams.notional = notional;
+      if (limit_price) orderParams.limit_price = limit_price;
+      if (stop_price) orderParams.stop_price = stop_price;
+      if (trail_price) orderParams.trail_price = trail_price;
+      if (trail_percent) orderParams.trail_percent = trail_percent;
+      if (client_order_id) orderParams.client_order_id = client_order_id;
+
+      // Validate qty or notional is present
+      if (!qty && !notional) {
+        res.status(400).json({ success: false, message: 'Either qty or notional must be provided' });
+        return;
+      }
+
+      // Create the order
+      const order: OrderResponse = await alpaca.createOrder(orderParams);
+
+      console.log('Order created successfully:', order.id);
+      res.status(201).json(order);
+    } catch (error: any) {
+      console.error('Error in /api/orders/create:', error);
+
+      // Handle specific Alpaca API error codes
+      if (error.response) {
+        switch (error.response.status) {
+          case 403:
+            res.status(403).json({
+              success: false,
+              message: 'Insufficient buying power or shares',
+              error: error.response.data
+            });
+            return;
+          case 422:
+            res.status(422).json({
+              success: false,
+              message: 'Unprocessable order',
+              error: error.response.data
+            });
+            return;
+        }
+      }
+
+      // Generic error handling
       next(error);
     }
   });

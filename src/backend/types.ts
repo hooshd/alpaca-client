@@ -25,6 +25,21 @@ export interface AccountResponse {
     buying_power: string;
 }
 
+export interface CreateOrderRequest {
+    symbol: string;
+    qty?: string;
+    notional?: string;
+    side: 'buy' | 'sell';
+    type: 'market' | 'limit' | 'stop' | 'stop_limit' | 'trailing_stop';
+    time_in_force: 'day' | 'gtc' | 'opg' | 'cls' | 'ioc' | 'fok';
+    limit_price?: string;
+    stop_price?: string;
+    trail_price?: string;
+    trail_percent?: string;
+    extended_hours?: boolean;
+    client_order_id?: string;
+  }
+
 export interface OrderResponse {
     id: string;
     client_order_id?: string;
