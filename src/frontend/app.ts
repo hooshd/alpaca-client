@@ -10,6 +10,7 @@ import {
 } from './alpaca.js';
 import { initializeMarketTime } from './marketTime.js';
 import { Order } from './types.js';
+import { CreateOrderRequest } from '../backend/types';
 
 // Store orders in memory
 let cachedOrders: Order[] = [];
@@ -121,6 +122,42 @@ async function renderOrders() {
   }
 }
 
+// Order submission function
+async function submitOrder(orderData: CreateOrderRequest) {
+  try {
+    const response = await fetch('/api/orders/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderData)
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      // Order successful
+      alert(`Order created successfully! Order ID: ${result.id}`);
+      
+      // Refresh orders list
+      await fetchAndUpdateOrders();
+      
+      // Reset form
+      const orderForm = document.getElementById('order-form') as HTMLFormElement;
+      orderForm.reset();
+      
+      // Hide modal
+      const orderConfirmationModal = document.getElementById('order-confirmation-modal') as HTMLDivElement;
+      orderConfirmationModal.classList.add('hidden');
+    } else {
+      // Handle error
+      throw new Error(result.message || 'Failed to create order');
+    }
+  } catch (error) {
+    handleError(error);
+  }
+}
+
 async function initializeApp() {
   try {
     // Update last updated time on initial load
@@ -134,6 +171,99 @@ async function initializeApp() {
       fetchAndUpdateOrders() // Initial order fetch
     ]);
     const cleanup = initializeMarketTime();
+
+    // Order form setup
+    const orderForm = document.getElementById('order-form') as HTMLFormElement;
+    const orderTypeSelect = document.getElementById('order-type') as HTMLSelectElement;
+    const limitPriceInput = document.getElementById('limit-price') as HTMLInputElement;
+    const extendedHoursCheckbox = document.getElementById('extended-hours') as HTMLInputElement;
+    const quantityTypeSelect = document.getElementById('quantity-type') as HTMLSelectElement;
+    const orderConfirmationModal = document.getElementById('order-confirmation-modal') as HTMLDivElement;
+    const orderConfirmationDetails = document.getElementById('order-confirmation-details') as HTMLDivElement;
+    const confirmOrderBtn = document.getElementById('confirm-order-btn') as HTMLButtonElement;
+    const cancelOrderBtn = document.getElementById('cancel-order-btn') as HTMLButtonElement;
+
+    let pendingOrderData: CreateOrderRequest | null = null;
+
+    // Dynamic form behavior
+    orderTypeSelect.addEventListener('change', () => {
+      const isLimitOrder = orderTypeSelect.value === 'limit';
+      limitPriceInput.disabled = !isLimitOrder;
+      limitPriceInput.classList.toggle('bg-gray-200', !isLimitOrder);
+      
+      extendedHoursCheckbox.disabled = !isLimitOrder;
+      if (!isLimitOrder) {
+        extendedHoursCheckbox.checked = false;
+      }
+    });
+
+    // Quantity type behavior
+    quantityTypeSelect.addEventListener('change', () => {
+      const quantityInput = document.getElementById('quantity') as HTMLInputElement;
+      quantityInput.placeholder = quantityTypeSelect.value === 'qty' 
+        ? 'Number of shares' 
+        : 'Dollar amount';
+    });
+
+    // Order form submission
+    orderForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const ticker = (document.getElementById('ticker') as HTMLInputElement).value.toUpperCase();
+      const side = (document.getElementById('side') as HTMLSelectElement).value as 'buy' | 'sell';
+      const quantityType = (document.getElementById('quantity-type') as HTMLSelectElement).value;
+      const quantity = (document.getElementById('quantity') as HTMLInputElement).value;
+      const orderType = (document.getElementById('order-type') as HTMLSelectElement).value as 'market' | 'limit';
+      const limitPrice = (document.getElementById('limit-price') as HTMLInputElement).value;
+      const extendedHours = (document.getElementById('extended-hours') as HTMLInputElement).checked;
+
+      // Prepare order data
+      const orderData: CreateOrderRequest = {
+        symbol: ticker,
+        side: side,
+        type: orderType,
+        time_in_force: 'day', // Default to day order
+        extended_hours: extendedHours
+      };
+
+      // Add qty or notional based on selection
+      if (quantityType === 'qty') {
+        orderData.qty = quantity;
+      } else {
+        orderData.notional = quantity;
+      }
+
+      // Add limit price for limit orders
+      if (orderType === 'limit' && limitPrice) {
+        orderData.limit_price = limitPrice;
+      }
+
+      // Show confirmation modal
+      pendingOrderData = orderData;
+      orderConfirmationDetails.innerHTML = `
+        <p><strong>Symbol:</strong> ${orderData.symbol}</p>
+        <p><strong>Side:</strong> ${orderData.side}</p>
+        <p><strong>Type:</strong> ${orderData.type}</p>
+        ${orderData.qty ? `<p><strong>Quantity:</strong> ${orderData.qty} shares</p>` : ''}
+        ${orderData.notional ? `<p><strong>Notional Value:</strong> $${orderData.notional}</p>` : ''}
+        ${orderData.limit_price ? `<p><strong>Limit Price:</strong> $${orderData.limit_price}</p>` : ''}
+        <p><strong>Extended Hours:</strong> ${orderData.extended_hours ? 'Yes' : 'No'}</p>
+      `;
+      orderConfirmationModal.classList.remove('hidden');
+    });
+
+    // Confirm order
+    confirmOrderBtn.addEventListener('click', async () => {
+      if (!pendingOrderData) return;
+      await submitOrder(pendingOrderData);
+      pendingOrderData = null;
+    });
+
+    // Cancel order
+    cancelOrderBtn.addEventListener('click', () => {
+      orderConfirmationModal.classList.add('hidden');
+      pendingOrderData = null;
+    });
 
     const updateButton = document.getElementById('update-all-button');
     if (updateButton) {

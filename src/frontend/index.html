@@ -54,6 +54,108 @@
         </section>
       </div>
 
+      <!-- New Order Creation Section -->
+      <section id="create-order" class="mb-4 bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Create Order</h2>
+        <form id="order-form" class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="ticker" class="block text-sm font-medium text-gray-700">Ticker</label>
+            <input 
+              type="text" 
+              id="ticker" 
+              name="ticker" 
+              required 
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all duration-300 ease-in-out"
+            >
+          </div>
+
+          <div>
+            <label for="side" class="block text-sm font-medium text-gray-700">Side</label>
+            <select 
+              id="side" 
+              name="side" 
+              required 
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all duration-300 ease-in-out appearance-none bg-white pr-8 cursor-pointer hover:bg-gray-50"
+            >
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="quantity-type" class="block text-sm font-medium text-gray-700">Quantity Type</label>
+            <select 
+              id="quantity-type" 
+              name="quantity-type" 
+              required 
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all duration-300 ease-in-out appearance-none bg-white pr-8 cursor-pointer hover:bg-gray-50"
+            >
+              <option value="qty">Shares</option>
+              <option value="notional">Notional</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity / Notional Value</label>
+            <input 
+              type="number" 
+              id="quantity" 
+              name="quantity" 
+              required 
+              step="0.01" 
+              min="0" 
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all duration-300 ease-in-out"
+            >
+          </div>
+
+          <div>
+            <label for="order-type" class="block text-sm font-medium text-gray-700">Order Type</label>
+            <select 
+              id="order-type" 
+              name="order-type" 
+              required 
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all duration-300 ease-in-out appearance-none bg-white pr-8 cursor-pointer hover:bg-gray-50"
+            >
+              <option value="market">Market</option>
+              <option value="limit">Limit</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="limit-price" class="block text-sm font-medium text-gray-700">Limit Price</label>
+            <input 
+              type="number" 
+              id="limit-price" 
+              name="limit-price" 
+              step="0.01" 
+              min="0" 
+              disabled 
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 bg-gray-200 transition-all duration-300 ease-in-out"
+            >
+          </div>
+
+          <div class="col-span-2 flex items-center">
+            <input 
+              type="checkbox" 
+              id="extended-hours" 
+              name="extended-hours" 
+              disabled 
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-2 transition-all duration-300 ease-in-out"
+            >
+            <label for="extended-hours" class="text-sm text-gray-700">Extended Hours Trading</label>
+          </div>
+
+          <div class="col-span-2">
+            <button 
+              type="submit" 
+              class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors duration-300"
+            >
+              Create Order
+            </button>
+          </div>
+        </form>
+      </section>
+
       <section id="positions" class="mb-4">
         <h2 class="text-lg font-semibold">Positions</h2>
         <div id="positionsList" class="space-y-2">
@@ -79,6 +181,33 @@
           <!-- Orders will be dynamically populated here -->
         </div>
       </section>
+    </div>
+
+    <!-- Order Confirmation Modal -->
+    <div 
+      id="order-confirmation-modal" 
+      class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center"
+    >
+      <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+        <h2 class="text-xl font-bold mb-4">Confirm Order</h2>
+        <div id="order-confirmation-details" class="mb-4">
+          <!-- Order details will be dynamically populated here -->
+        </div>
+        <div class="flex justify-between">
+          <button 
+            id="confirm-order-btn" 
+            class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Confirm
+          </button>
+          <button 
+            id="cancel-order-btn" 
+            class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/frontend/app.js"></script>
