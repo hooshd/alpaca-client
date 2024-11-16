@@ -6,21 +6,21 @@
     <title>Alpaca Trading Interface</title>
     <link href="/styles.css" rel="stylesheet" />
   </head>
-  <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
-    <div id="app" class="w-full max-w-md bg-white shadow-md rounded-lg p-6">
+  <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <div id="app" class="w-full max-w-3xl bg-white shadow-md rounded-lg p-6 sm:p-8">
       <h1 class="text-2xl font-bold mb-4 text-center">Alpaca Dashboard</h1>
 
       <section id="account-info" class="mb-4">
         <h2 class="text-lg font-semibold">Account Info</h2>
-        <div class="grid grid-cols-2 gap-2 text-sm">
+        <div class="grid sm:grid-cols-2 gap-2 text-sm">
           <div class="font-medium">User ID:</div>
-          <div id="accountId" class="text-right">Loading...</div>
+          <div id="accountId" class="sm:text-right">Loading...</div>
           <div class="font-medium">Account Number:</div>
-          <div id="accountNumber" class="text-right">Loading...</div>
+          <div id="accountNumber" class="sm:text-right">Loading...</div>
           <div class="font-medium">Cash Balance:</div>
-          <div id="cashBalance" class="text-right text-alpaca-green">Loading...</div>
+          <div id="cashBalance" class="sm:text-right text-alpaca-green">Loading...</div>
           <div class="font-medium">Buying Power:</div>
-          <div id="buyingPower" class="text-right text-alpaca-blue">Loading...</div>
+          <div id="buyingPower" class="sm:text-right text-alpaca-blue">Loading...</div>
         </div>
       </section>
 
@@ -34,23 +34,44 @@
         Last updated: <span id="last-updated-time" data-last-updated="">Loading...</span>
       </div>
 
-      <section id="balance" class="mb-4">
-        <h2 class="text-lg font-semibold">Current Balance</h2>
-        <div id="balanceValue" class="text-2xl font-bold text-alpaca-green">Loading...</div>
-      </section>
+      <div class="grid sm:grid-cols-2 gap-6">
+        <section id="balance" class="mb-4">
+          <h2 class="text-lg font-semibold">Current Balance</h2>
+          <div id="balanceValue" class="text-2xl font-bold text-alpaca-green">Loading...</div>
+        </section>
 
-      <section id="market-time" class="mb-4 p-4 rounded-lg bg-gray-200">
-        <div id="market-time-block" class="text-2xl font-mono font-bold mb-2">Market Time: Loading...</div>
-        <div id="market-status" class="px-3 py-1 rounded text-white font-semibold bg-alpaca-blue">
-          The market is: Loading...
-        </div>
-        <div id="market-next-status" class="text-sm text-gray-600 mt-2">Market closes at...</div>
-      </section>
+        <section id="market-time" class="mb-4 p-4 rounded-lg bg-gray-200">
+          <div id="market-time-block" class="text-2xl font-mono font-bold mb-2">Market Time: Loading...</div>
+          <div id="market-status" class="px-3 py-1 rounded text-white font-semibold bg-alpaca-blue">
+            The market is: Loading...
+          </div>
+          <div id="market-next-status" class="text-sm text-gray-600 mt-2">Market closes at...</div>
+        </section>
+      </div>
 
       <section id="positions" class="mb-4">
         <h2 class="text-lg font-semibold">Positions</h2>
         <div id="positionsList" class="space-y-2">
           <!-- Positions will be dynamically populated here -->
+        </div>
+      </section>
+
+      <section id="orders" class="mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-lg font-semibold">Orders</h2>
+          <div class="flex space-x-2">
+            <label class="inline-flex items-center">
+              <input type="checkbox" id="open-orders-checkbox" class="form-checkbox h-4 w-4 text-blue-600" checked />
+              <span class="ml-2 text-sm">Open</span>
+            </label>
+            <label class="inline-flex items-center">
+              <input type="checkbox" id="closed-orders-checkbox" class="form-checkbox h-4 w-4 text-blue-600" checked />
+              <span class="ml-2 text-sm">Closed</span>
+            </label>
+          </div>
+        </div>
+        <div id="ordersList" class="max-h-64 overflow-y-auto border rounded-lg">
+          <!-- Orders will be dynamically populated here -->
         </div>
       </section>
     </div>

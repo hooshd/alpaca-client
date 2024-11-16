@@ -11,3 +11,19 @@ export interface AccountInfo {
   cash: string;
   buying_power: string;
 }
+
+export interface Order {
+  id: string;
+  symbol: string;
+  asset_class: string;
+  qty?: string;
+  notional?: string;
+  status: string;
+  filled_qty?: string;
+  filled_avg_price?: string;
+  type: string;
+  side: 'buy' | 'sell';
+  time_in_force: string;
+  extended_hours: boolean;
+  created_at: string;
+}
