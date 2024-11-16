@@ -5,11 +5,11 @@
   "main": "dist/backend/server.js",
   "type": "module",
   "scripts": {
-    "start": "npm run build && concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:backend": "node --loader ts-node/esm dist/backend/server.js",
+    "start": "NODE_ENV=production npm run build && concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "NODE_ENV=production node --loader ts-node/esm dist/backend/server.js",
     "start:frontend": "npx tailwindcss -i ./src/frontend/styles.css -o ./dist/styles.css --watch",
     "build": "tsc && npx tailwindcss -i ./src/frontend/styles.css -o ./dist/styles.css && cp src/frontend/index.html dist/index.html",
-    "dev": "npm run build && nodemon --exec node --loader ts-node/esm dist/backend/server.js"
+    "dev": "NODE_ENV=development npm run build && nodemon --exec node --loader ts-node/esm dist/backend/server.js"
   },
   "dependencies": {
     "@alpacahq/alpaca-trade-api": "^3.1.2",

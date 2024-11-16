@@ -37,14 +37,25 @@ const createApp = (): Express => {
     return app;
 };
 
+// Determine port based on environment
+const determinePort = (): number => {
+    // If PORT is explicitly set, use that
+    if (process.env.PORT) {
+        return parseInt(process.env.PORT, 10);
+    }
+
+    // Use port 80 in production, 3000 in development
+    return process.env.NODE_ENV === 'production' ? 80 : 3000;
+};
+
 // Create and start server
-const PORT: number = parseInt(process.env.PORT || '3000', 10);
+const PORT: number = determinePort();
 const app = createApp();
 const server = http.createServer(app);
 
 const startServer = () => {
     server.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
+        console.log(`Server running on http://localhost:${PORT} (${process.env.NODE_ENV || 'development'} mode)`);
     });
 };
 
