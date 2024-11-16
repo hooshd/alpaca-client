@@ -17,7 +17,10 @@ function convertToEasternTime(timestamp: string): string {
 const API_BASE_URL = '/api';
 
 export function formatCurrency(value: number): string {
-  const formattedValue = value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const formattedValue = value.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
   if (value < 0) {
     return `<span class="text-red-500">(${formattedValue.slice(1)})</span>`;
   }
@@ -32,7 +35,7 @@ export function handleError(error: unknown) {
   if (!errorElement) {
     errorElement = document.createElement('div');
     errorElement.id = 'error-display';
-    errorElement.className = 'bg-alpaca-red text-white p-3 rounded mt-4';
+    errorElement.className = 'bg-red-500 text-white p-4 rounded-lg mt-4 shadow';
     document.getElementById('app')?.appendChild(errorElement);
   }
 
@@ -67,7 +70,7 @@ export async function fetchBalance() {
 
     const balanceElement = document.getElementById('balanceValue');
     if (balanceElement) {
-      balanceElement.textContent = formatCurrency(data.balance);
+      balanceElement.innerHTML = formatCurrency(data.balance);
     }
   } catch (error) {
     handleError(error);
@@ -84,22 +87,22 @@ export async function fetchPositions() {
       positionsList.innerHTML = positions
         .map(
           (position) => `
-                <div class="flex justify-between items-center bg-gray-100 p-3 rounded">
-                    <div>
-                        <span class="font-bold">${position.symbol}</span>
-                        <span class="text-gray-600 ml-2">${position.quantity} shares</span>
-                    </div>
-                    <div class="flex items-center">
-                        <span class="mr-2">${formatCurrency(position.marketValue)}</span>
-                        <button 
-                            data-symbol="${position.symbol}" 
-                            class="close-position bg-alpaca-red text-white px-2 py-1 rounded hover:bg-red-600"
-                        >
-                            Close
-                        </button>
-                    </div>
-                </div>
-            `
+          <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow">
+            <div>
+              <span class="text-lg font-semibold text-gray-800">${position.symbol}</span>
+              <span class="text-gray-500 ml-2">${position.quantity} shares</span>
+            </div>
+            <div class="flex items-center">
+              <span class="mr-4 text-gray-800">${formatCurrency(position.marketValue)}</span>
+              <button 
+                data-symbol="${position.symbol}" 
+                class="close-position bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors duration-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        `
         )
         .join('');
 
@@ -178,34 +181,34 @@ export function formatOrder(order: Order): string {
   const quantity = order.qty ? `${order.qty} shares` : order.notional ? `$${order.notional}` : 'N/A';
 
   return `
-        <div class="flex justify-between items-center p-2 border-b last:border-b-0 hover:bg-gray-50 transition-colors">
-            <div class="flex-1">
-                <div class="font-semibold">${order.symbol} (${order.asset_class})</div>
-                <div class="text-xs text-gray-500">${time}</div>
-            </div>
-            <div class="flex-1 text-center">
-                <div>${order.side.toUpperCase()} ${order.type.toUpperCase()}</div>
-                <div class="text-xs text-gray-500">${quantity}</div>
-            </div>
-            <div class="flex-1 text-right">
-                <div class="text-sm ${order.status === 'new' ? 'text-blue-600' : 'text-green-600'}">
-                    ${order.status.toUpperCase()}
-                </div>
-                ${
-                  order.status === 'new'
-                    ? `
-                    <button 
-                        data-order-id="${order.id}" 
-                        class="cancel-order-btn text-xs text-red-500 hover:text-red-700 mt-1"
-                    >
-                        Cancel
-                    </button>
-                `
-                    : ''
-                }
-            </div>
+    <div class="flex justify-between items-center p-4 bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+      <div class="flex-1">
+        <div class="text-lg font-semibold text-gray-800">${order.symbol} (${order.asset_class})</div>
+        <div class="text-sm text-gray-500">${time}</div>
+      </div>
+      <div class="flex-1 text-center">
+        <div class="text-gray-800">${order.side.toUpperCase()} ${order.type.toUpperCase()}</div>
+        <div class="text-sm text-gray-500">${quantity}</div>
+      </div>
+      <div class="flex-1 text-right">
+        <div class="text-sm font-medium ${order.status === 'new' ? 'text-blue-600' : 'text-green-600'}">
+          ${order.status.toUpperCase()}
         </div>
-    `;
+        ${
+          order.status === 'new'
+            ? `
+          <button 
+            data-order-id="${order.id}" 
+            class="cancel-order-btn text-sm text-red-500 hover:text-red-600 mt-2"
+          >
+            Cancel
+          </button>
+        `
+            : ''
+        }
+      </div>
+    </div>
+  `;
 }
 
 export async function updateAllData() {

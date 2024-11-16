@@ -3,6 +3,31 @@
 @tailwind utilities;
 
 /* Custom additional styles can be added here */
+
+/* Smooth scroll for better UX */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for modern look */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5); /* gray-400 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+
+/* Negative value text */
 .negative-value {
-    color: red;
+  color: #e74c3c; /* Alpaca Red */
 }
