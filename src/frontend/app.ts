@@ -2,298 +2,14 @@ import {
   fetchBalance, 
   fetchPositions, 
   fetchAccountInfo, 
-  updateAllData, 
-  fetchOrders, 
-  formatOrder, 
-  handleError,
-  cancelOrder 
+  updateAllData
 } from './alpaca.js';
 import { initializeMarketTime } from './marketTime.js';
-import { Order } from './types.js';
-import { CreateOrderRequest } from '../backend/types';
-
-// Store orders in memory
-let cachedOrders: Order[] = [];
-
-// Define order status arrays
-const openStatuses = [
-  'new',
-  'partially_filled',
-  'done_for_day',
-  'accepted',
-  'pending_new',
-  'accepted_for_bidding',
-  'stopped',
-  'calculated'
-];
-
-const closedStatuses = [
-  'canceled',
-  'expired',
-  'replaced',
-  'pending_cancel',
-  'pending_replace',
-  'rejected',
-  'suspended'
-];
-
-// Function to format time in US Eastern Time
-function formatUSEasternTime(date: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  }).format(date);
-}
-
-// Function to get US Eastern Time as Date
-function getUSEasternTime(): Date {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-}
-
-// Function to update the last updated time
-function updateLastUpdatedTime() {
-  const lastUpdatedTimeElement = document.getElementById('last-updated-time');
-  if (lastUpdatedTimeElement) {
-    const now = getUSEasternTime();
-    lastUpdatedTimeElement.textContent = formatUSEasternTime(now);
-    lastUpdatedTimeElement.setAttribute('data-last-updated', now.toISOString());
-  }
-}
-
-// Function to fetch orders from the backend
-async function fetchAndUpdateOrders() {
-  try {
-    cachedOrders = await fetchOrders('all');
-    await renderOrders();
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-// Order filtering and rendering
-async function renderOrders() {
-  try {
-    const openCheckbox = document.getElementById('open-orders-checkbox') as HTMLInputElement;
-    const closedCheckbox = document.getElementById('closed-orders-checkbox') as HTMLInputElement;
-    console.log(`Change in checkbox status: Open: ${openCheckbox.checked}, Closed: ${closedCheckbox.checked}`);
-    const ordersList = document.getElementById('ordersList');
-
-    if (!ordersList || !openCheckbox || !closedCheckbox) return;
-
-    // If neither checkbox is checked, show no orders
-    if (!openCheckbox.checked && !closedCheckbox.checked) {
-      console.log('No orders to display');
-      ordersList.innerHTML = '<div class="p-4 text-center text-gray-500">No orders to display</div>';
-      return;
-    }
-
-    // Filter orders based on checkbox states using cached orders
-    const filteredOrders = cachedOrders.filter(order => {
-      if (openCheckbox.checked && openStatuses.includes(order.status)) return true;
-      if (closedCheckbox.checked && closedStatuses.includes(order.status)) return true;
-      return false;
-    });
-
-    console.log(`Filtered orders: ${filteredOrders.length}`);
-
-    // Render filtered orders
-    ordersList.innerHTML = filteredOrders.length 
-      ? filteredOrders.map(formatOrder).join('')
-      : '<div class="p-4 text-center text-gray-500">No orders to display</div>';
-
-    // Add event listeners for cancel order buttons
-    document.querySelectorAll('.cancel-order-btn').forEach(button => {
-      button.addEventListener('click', async (e) => {
-        const orderId = (e.target as HTMLButtonElement).dataset.orderId;
-        if (orderId) {
-          await cancelOrder(orderId);
-          await fetchAndUpdateOrders(); // Refresh orders after cancellation
-        }
-      });
-    });
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-// Order submission function
-async function submitOrder(orderData: CreateOrderRequest) {
-  try {
-    const response = await fetch('/api/orders/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(orderData)
-    });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      // Order successful
-      alert(`Order created successfully! Order ID: ${result.id}`);
-      
-      // Refresh orders list
-      await fetchAndUpdateOrders();
-      
-      // Reset form
-      const orderForm = document.getElementById('order-form') as HTMLFormElement;
-      orderForm.reset();
-      
-      // Hide modal
-      const orderConfirmationModal = document.getElementById('order-confirmation-modal') as HTMLDivElement;
-      orderConfirmationModal.classList.add('hidden');
-    } else {
-      // Handle error
-      throw new Error(result.message || 'Failed to create order');
-    }
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-let fetchPriceTimeout: number | null = null;
-
-
-const fetchLatestPrice = async (symbol: string) => {
-  try {
-    const response = await fetch(`/api/latest-price?symbol=${encodeURIComponent(symbol)}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch the latest price');
-    }
-    const data = await response.json();
-    return data.price;
-  } catch (error) {
-    console.error('Error fetching the latest price:', error);
-    return null;
-  }
-};
-
-// Function to update price and total order value in the modal
-const updateOrderPriceInfo = async (symbol: string, quantity: string | undefined) => {
-  const latestPriceElement = document.getElementById('latest-price');
-  const totalOrderValueElement = document.getElementById('total-order-value');
-
-  if (!latestPriceElement || !totalOrderValueElement) return;
-
-  try {
-    // Fetch the latest price
-    const price = await fetchLatestPrice(symbol);
-    if (price === null) throw new Error('Failed to fetch the latest price');
-
-    latestPriceElement.textContent = `$${price.toFixed(2)}`;
-
-    // Calculate total order value if quantity is provided
-    if (quantity) {
-      const numericQuantity = parseFloat(quantity);
-      const totalValue = price * numericQuantity;
-      totalOrderValueElement.textContent = `$${totalValue.toFixed(2)}`;
-    } else {
-      totalOrderValueElement.textContent = 'N/A';
-    }
-  } catch (error) {
-    console.error('Error updating price info:', error);
-    latestPriceElement.textContent = 'Error';
-    totalOrderValueElement.textContent = 'Error';
-  }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-  const tickerInput = document.getElementById('ticker') as HTMLInputElement;
-  const resultsContainer = document.getElementById('ticker-results') as HTMLDivElement;
-  const limitPriceInput = document.getElementById('limit-price') as HTMLInputElement;
-
-  let searchTimeout: number | null = null;
-
-  const fetchTickerSuggestions = async (query: string) => {
-    try {
-        const response = await fetch(`/api/ticker-suggestions?query=${encodeURIComponent(query)}`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch ticker suggestions');
-        }
-        const results = await response.json();
-        return results;
-    } catch (error) {
-        console.error('Error fetching ticker suggestions:', error);
-        return [];
-    }
-};
-
-
-  const renderResults = (results: any[]) => {
-    if (results.length === 0) {
-      resultsContainer.classList.add('hidden');
-      return;
-    }
-
-    resultsContainer.innerHTML = results
-      .map(
-        (result) => `
-          <div class="px-4 py-2 cursor-pointer hover:bg-gray-200" data-symbol="${result['1. symbol']}" data-name="${result['2. name']}">
-            <strong>${result['1. symbol']}</strong> - ${result['2. name']}
-          </div>
-        `
-      )
-      .join('');
-
-    resultsContainer.classList.remove('hidden');
-
-    // Add click event listeners to suggestions
-    Array.from(resultsContainer.children).forEach((child) => {
-      child.addEventListener('click', (event: Event) => {
-        const target = event.currentTarget as HTMLDivElement;
-        tickerInput.value = target.getAttribute('data-symbol') || '';
-        resultsContainer.classList.add('hidden'); // Hide results after selection
-      });
-    });
-  };
-
-  tickerInput.addEventListener('input', () => {
-    const query = tickerInput.value.trim();
-    if (searchTimeout) clearTimeout(searchTimeout);
-
-    if (query.length === 0) {
-      resultsContainer.classList.add('hidden');
-      return;
-    }
-
-    searchTimeout = window.setTimeout(async () => {
-      const results = await fetchTickerSuggestions(query);
-      renderResults(results);
-    }, 300); // Debounce API calls
-  });
-
-  tickerInput.addEventListener('input', () => {
-    const symbol = tickerInput.value.trim();
-  
-    if (fetchPriceTimeout) clearTimeout(fetchPriceTimeout);
-  
-    if (symbol.length === 0) {
-      limitPriceInput.value = '';
-      return;
-    }
-  
-    fetchPriceTimeout = window.setTimeout(async () => {
-      const price = await fetchLatestPrice(symbol.toUpperCase());
-      if (price !== null) {
-        limitPriceInput.value = price.toFixed(2); // Update limit price field
-      }
-    }, 1000); // Debounce delay
-  });
-
-  // Hide results if clicked outside
-  document.addEventListener('click', (event) => {
-    if (!resultsContainer.contains(event.target as Node) && event.target !== tickerInput) {
-      resultsContainer.classList.add('hidden');
-    }
-  });
-});
+import { updateLastUpdatedTime } from './components/timeUtils.js';
+import { fetchAndUpdateOrders, renderOrders } from './components/orderManager.js';
+import { setupPriceUpdates } from './components/priceManager.js';
+import { setupTickerSearch } from './components/tickerSearch.js';
+import { setupFormHandling } from './components/formManager.js';
 
 async function initializeApp() {
   try {
@@ -309,107 +25,22 @@ async function initializeApp() {
     ]);
     const cleanup = initializeMarketTime();
 
-    // Order form setup
-    const orderForm = document.getElementById('order-form') as HTMLFormElement;
-    const orderTypeSelect = document.getElementById('order-type') as HTMLSelectElement;
+    // Setup form elements
+    const tickerInput = document.getElementById('ticker') as HTMLInputElement;
+    const resultsContainer = document.getElementById('ticker-results') as HTMLDivElement;
     const limitPriceInput = document.getElementById('limit-price') as HTMLInputElement;
-    const extendedHoursCheckbox = document.getElementById('extended-hours') as HTMLInputElement;
-    const quantityTypeSelect = document.getElementById('quantity-type') as HTMLSelectElement;
-    const orderConfirmationModal = document.getElementById('order-confirmation-modal') as HTMLDivElement;
-    const orderConfirmationDetails = document.getElementById('order-confirmation-details') as HTMLDivElement;
-    const confirmOrderBtn = document.getElementById('confirm-order-btn') as HTMLButtonElement;
-    const cancelOrderBtn = document.getElementById('cancel-order-btn') as HTMLButtonElement;
 
-    let pendingOrderData: CreateOrderRequest | null = null;
+    // Initialize components
+    setupTickerSearch(tickerInput, resultsContainer);
+    setupPriceUpdates(tickerInput, limitPriceInput);
+    setupFormHandling();
 
-    // Dynamic form behavior
-    orderTypeSelect.addEventListener('change', () => {
-      const isLimitOrder = orderTypeSelect.value === 'limit';
-      limitPriceInput.disabled = !isLimitOrder;
-      limitPriceInput.classList.toggle('bg-gray-200', !isLimitOrder);
-      
-      extendedHoursCheckbox.disabled = !isLimitOrder;
-      if (!isLimitOrder) {
-        extendedHoursCheckbox.checked = false;
-      }
-    });
-
-    // Quantity type behavior
-    quantityTypeSelect.addEventListener('change', () => {
-      const quantityInput = document.getElementById('quantity') as HTMLInputElement;
-      quantityInput.placeholder = quantityTypeSelect.value === 'qty' 
-        ? 'Number of shares' 
-        : 'Dollar amount';
-    });
-
-    // Order form submission
-    orderForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-    
-      const ticker = (document.getElementById('ticker') as HTMLInputElement).value.toUpperCase();
-      const side = (document.getElementById('side') as HTMLSelectElement).value as 'buy' | 'sell';
-      const quantityType = (document.getElementById('quantity-type') as HTMLSelectElement).value;
-      const quantity = (document.getElementById('quantity') as HTMLInputElement).value;
-      const orderType = (document.getElementById('order-type') as HTMLSelectElement).value as 'market' | 'limit' | 'stop' | 'stop_limit' | 'trailing_stop';
-      const limitPrice = (document.getElementById('limit-price') as HTMLInputElement).value;
-      const extendedHours = (document.getElementById('extended-hours') as HTMLInputElement).checked;
-    
-      // Prepare order data
-      const orderData: CreateOrderRequest = {
-        symbol: ticker,
-        side: side,
-        type: orderType,
-        time_in_force: 'day', // Default to day order
-        extended_hours: extendedHours
-      };
-    
-      // Add `qty` or `notional` based on selection
-      if (quantityType === 'qty') {
-        orderData.qty = quantity; // Ensure qty remains a string
-      } else {
-        orderData.notional = quantity; // Ensure notional remains a string
-      }
-    
-      // Add limit price for limit orders
-      if (orderType === 'limit' && limitPrice) {
-        orderData.limit_price = limitPrice;
-      }
-    
-      // Show confirmation modal
-      pendingOrderData = orderData;
-      orderConfirmationDetails.innerHTML = `
-        <p><strong>Symbol:</strong> ${orderData.symbol}</p>
-        <p><strong>Side:</strong> ${orderData.side}</p>
-        <p><strong>Type:</strong> ${orderData.type}</p>
-        ${orderData.qty ? `<p><strong>Quantity:</strong> ${orderData.qty} shares</p>` : ''}
-        ${orderData.notional ? `<p><strong>Notional Value:</strong> $${orderData.notional}</p>` : ''}
-        ${orderData.limit_price ? `<p><strong>Limit Price:</strong> $${orderData.limit_price}</p>` : ''}
-        <p><strong>Extended Hours:</strong> ${orderData.extended_hours ? 'Yes' : 'No'}</p>
-      `;
-      orderConfirmationModal.classList.remove('hidden');
-    
-      // Fetch the latest price and calculate total value
-      await updateOrderPriceInfo(ticker, quantityType === 'qty' ? orderData.qty : '');
-    });
-
-    // Confirm order
-    confirmOrderBtn.addEventListener('click', async () => {
-      if (!pendingOrderData) return;
-      await submitOrder(pendingOrderData);
-      pendingOrderData = null;
-    });
-
-    // Cancel order
-    cancelOrderBtn.addEventListener('click', () => {
-      orderConfirmationModal.classList.add('hidden');
-      pendingOrderData = null;
-    });
-
+    // Setup update button
     const updateButton = document.getElementById('update-all-button');
     if (updateButton) {
       updateButton.addEventListener('click', async () => {
         await updateAllData();
-        await fetchAndUpdateOrders(); // Fetch fresh orders on update
+        await fetchAndUpdateOrders();
         updateLastUpdatedTime();
       });
     }
@@ -419,7 +50,6 @@ async function initializeApp() {
     const closedCheckbox = document.getElementById('closed-orders-checkbox');
 
     if (openCheckbox && closedCheckbox) {
-      // Add input event listeners to catch all changes including programmatic ones
       openCheckbox.addEventListener('input', () => renderOrders());
       closedCheckbox.addEventListener('input', () => renderOrders());
     }
