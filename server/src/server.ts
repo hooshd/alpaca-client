@@ -19,7 +19,7 @@ app.use(express.json());
 setupRoutes(app);
 
 // Serve static files from the React app
-app.use(express.static(path.join(__dirname, '../../client/build')));
+app.use(express.static(path.join(__dirname, '../../client/dist')));  // Changed from 'build' to 'dist'
 
 // Error handling middleware for API routes
 app.use('/api', errorHandler);
@@ -27,7 +27,7 @@ app.use('/api', errorHandler);
 // The "catchall" handler: for any request that doesn't
 // match an API route, send back React's index.html file.
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../client/build/index.html'));
+  res.sendFile(path.join(__dirname, '../../client/dist/index.html'));  // Changed from 'build' to 'dist'
 });
 
 // Start server
