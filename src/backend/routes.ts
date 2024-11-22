@@ -250,6 +250,7 @@ export const setupRoutes = (app: Express) => {
       next(error);
     }
   });
+
   app.get('/api/ticker-suggestions', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { query } = req.query;
@@ -270,9 +271,47 @@ export const setupRoutes = (app: Express) => {
       }
 
       const data = await response.json();
-      res.json(data.bestMatches || []);
+
+      // Filter results to include only those with region "United States"
+      const filteredResults = (data.bestMatches || []).filter(
+        (match: { [key: string]: string }) => match['4. region'] === 'United States'
+      );
+
+      res.json(filteredResults);
     } catch (error) {
       console.error('Error fetching ticker suggestions:', error);
+      next(error);
+    }
+  });
+
+  app.get('/api/latest-price', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { symbol } = req.query;
+
+      if (!symbol || typeof symbol !== 'string') {
+        res.status(400).json({ error: 'Symbol parameter is required' });
+        return;
+      }
+
+      const apiKey = process.env.POLYGON_API_KEY;
+      const url = `https://api.polygon.io/v2/last/trade/${symbol}?apikey=${apiKey}`;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch latest price from Polygon API');
+      }
+
+      const data = await response.json();
+
+      // Ensure the response contains valid data
+      if (!data || !data.results || typeof data.results.p === 'undefined') {
+        res.status(500).json({ error: 'Invalid data from Polygon API' });
+        return;
+      }
+
+      res.json({ symbol, price: data.results.p });
+    } catch (error) {
+      console.error('Error fetching latest price:', error);
       next(error);
     }
   });

@@ -158,9 +158,27 @@ async function submitOrder(orderData: CreateOrderRequest) {
   }
 }
 
+let fetchPriceTimeout: number | null = null;
+
+
+const fetchLatestPrice = async (symbol: string) => {
+  try {
+    const response = await fetch(`/api/latest-price?symbol=${encodeURIComponent(symbol)}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch the latest price');
+    }
+    const data = await response.json();
+    return data.price;
+  } catch (error) {
+    console.error('Error fetching the latest price:', error);
+    return null;
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const tickerInput = document.getElementById('ticker') as HTMLInputElement;
   const resultsContainer = document.getElementById('ticker-results') as HTMLDivElement;
+  const limitPriceInput = document.getElementById('limit-price') as HTMLInputElement;
 
   let searchTimeout: number | null = null;
 
@@ -220,6 +238,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const results = await fetchTickerSuggestions(query);
       renderResults(results);
     }, 300); // Debounce API calls
+  });
+
+  tickerInput.addEventListener('input', () => {
+    const symbol = tickerInput.value.trim();
+  
+    if (fetchPriceTimeout) clearTimeout(fetchPriceTimeout);
+  
+    if (symbol.length === 0) {
+      limitPriceInput.value = '';
+      return;
+    }
+  
+    fetchPriceTimeout = window.setTimeout(async () => {
+      const price = await fetchLatestPrice(symbol.toUpperCase());
+      if (price !== null) {
+        limitPriceInput.value = price.toFixed(2); // Update limit price field
+      }
+    }, 1000); // Debounce delay
   });
 
   // Hide results if clicked outside
