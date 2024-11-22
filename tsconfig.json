@@ -7,18 +7,15 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "sourceMap": true,
-    "allowSyntheticDefaultImports": true,
-    "types": ["node", "express"],
-    "lib": ["ES2022", "DOM"],
-    "resolveJsonModule": true
+    "composite": true,
+    "declaration": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
   },
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  },
-  "include": ["src/**/*"],
+  "references": [
+    { "path": "./client" },
+    { "path": "./server" }
+  ],
+  "files": [],
   "exclude": ["node_modules"]
 }
