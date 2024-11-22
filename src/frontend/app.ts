@@ -175,6 +175,35 @@ const fetchLatestPrice = async (symbol: string) => {
   }
 };
 
+// Function to update price and total order value in the modal
+const updateOrderPriceInfo = async (symbol: string, quantity: string | undefined) => {
+  const latestPriceElement = document.getElementById('latest-price');
+  const totalOrderValueElement = document.getElementById('total-order-value');
+
+  if (!latestPriceElement || !totalOrderValueElement) return;
+
+  try {
+    // Fetch the latest price
+    const price = await fetchLatestPrice(symbol);
+    if (price === null) throw new Error('Failed to fetch the latest price');
+
+    latestPriceElement.textContent = `$${price.toFixed(2)}`;
+
+    // Calculate total order value if quantity is provided
+    if (quantity) {
+      const numericQuantity = parseFloat(quantity);
+      const totalValue = price * numericQuantity;
+      totalOrderValueElement.textContent = `$${totalValue.toFixed(2)}`;
+    } else {
+      totalOrderValueElement.textContent = 'N/A';
+    }
+  } catch (error) {
+    console.error('Error updating price info:', error);
+    latestPriceElement.textContent = 'Error';
+    totalOrderValueElement.textContent = 'Error';
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const tickerInput = document.getElementById('ticker') as HTMLInputElement;
   const resultsContainer = document.getElementById('ticker-results') as HTMLDivElement;
@@ -316,15 +345,15 @@ async function initializeApp() {
     // Order form submission
     orderForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-
+    
       const ticker = (document.getElementById('ticker') as HTMLInputElement).value.toUpperCase();
       const side = (document.getElementById('side') as HTMLSelectElement).value as 'buy' | 'sell';
       const quantityType = (document.getElementById('quantity-type') as HTMLSelectElement).value;
       const quantity = (document.getElementById('quantity') as HTMLInputElement).value;
-      const orderType = (document.getElementById('order-type') as HTMLSelectElement).value as 'market' | 'limit';
+      const orderType = (document.getElementById('order-type') as HTMLSelectElement).value as 'market' | 'limit' | 'stop' | 'stop_limit' | 'trailing_stop';
       const limitPrice = (document.getElementById('limit-price') as HTMLInputElement).value;
       const extendedHours = (document.getElementById('extended-hours') as HTMLInputElement).checked;
-
+    
       // Prepare order data
       const orderData: CreateOrderRequest = {
         symbol: ticker,
@@ -333,19 +362,19 @@ async function initializeApp() {
         time_in_force: 'day', // Default to day order
         extended_hours: extendedHours
       };
-
-      // Add qty or notional based on selection
+    
+      // Add `qty` or `notional` based on selection
       if (quantityType === 'qty') {
-        orderData.qty = quantity;
+        orderData.qty = quantity; // Ensure qty remains a string
       } else {
-        orderData.notional = quantity;
+        orderData.notional = quantity; // Ensure notional remains a string
       }
-
+    
       // Add limit price for limit orders
       if (orderType === 'limit' && limitPrice) {
         orderData.limit_price = limitPrice;
       }
-
+    
       // Show confirmation modal
       pendingOrderData = orderData;
       orderConfirmationDetails.innerHTML = `
@@ -358,6 +387,9 @@ async function initializeApp() {
         <p><strong>Extended Hours:</strong> ${orderData.extended_hours ? 'Yes' : 'No'}</p>
       `;
       orderConfirmationModal.classList.remove('hidden');
+    
+      // Fetch the latest price and calculate total value
+      await updateOrderPriceInfo(ticker, quantityType === 'qty' ? orderData.qty : '');
     });
 
     // Confirm order
