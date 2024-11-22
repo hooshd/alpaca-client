@@ -165,21 +165,19 @@ document.addEventListener('DOMContentLoaded', () => {
   let searchTimeout: number | null = null;
 
   const fetchTickerSuggestions = async (query: string) => {
-    const apiKey = 'JFSP6UDXSY1S5M9T'; // Replace with your AlphaVantage API key
-    const url = `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${encodeURIComponent(query)}&apikey=${apiKey}`;
-
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-      const data = await response.json();
-      return data.bestMatches || [];
+        const response = await fetch(`/api/ticker-suggestions?query=${encodeURIComponent(query)}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch ticker suggestions');
+        }
+        const results = await response.json();
+        return results;
     } catch (error) {
-      console.error('Error fetching ticker suggestions:', error);
-      return [];
+        console.error('Error fetching ticker suggestions:', error);
+        return [];
     }
-  };
+};
+
 
   const renderResults = (results: any[]) => {
     if (results.length === 0) {

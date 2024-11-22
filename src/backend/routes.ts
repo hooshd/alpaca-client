@@ -1,6 +1,13 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import { createAlpacaClient } from './alpacaClient';
-import { AlpacaPosition, BalanceResponse, PositionResponse, AccountResponse, CreateOrderRequest, OrderResponse } from './types';
+import {
+  AlpacaPosition,
+  BalanceResponse,
+  PositionResponse,
+  AccountResponse,
+  CreateOrderRequest,
+  OrderResponse,
+} from './types';
 
 export const setupRoutes = (app: Express) => {
   const alpaca = createAlpacaClient();
@@ -149,21 +156,21 @@ export const setupRoutes = (app: Express) => {
   app.post('/api/orders/create', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       console.log('Handling /api/orders/create request');
-      
+
       // Destructure and validate required fields
-      const { 
-        symbol, 
-        side, 
-        type, 
-        time_in_force, 
-        qty, 
-        notional, 
-        limit_price, 
+      const {
+        symbol,
+        side,
+        type,
+        time_in_force,
+        qty,
+        notional,
+        limit_price,
         stop_price,
         trail_price,
         trail_percent,
         extended_hours = false,
-        client_order_id
+        client_order_id,
       }: CreateOrderRequest = req.body;
 
       // Validate required fields
@@ -193,7 +200,7 @@ export const setupRoutes = (app: Express) => {
         side,
         type,
         time_in_force,
-        extended_hours
+        extended_hours,
       };
 
       // Add optional parameters
@@ -226,20 +233,46 @@ export const setupRoutes = (app: Express) => {
             res.status(403).json({
               success: false,
               message: 'Insufficient buying power or shares',
-              error: error.response.data
+              error: error.response.data,
             });
             return;
           case 422:
             res.status(422).json({
               success: false,
               message: 'Unprocessable order',
-              error: error.response.data
+              error: error.response.data,
             });
             return;
         }
       }
 
       // Generic error handling
+      next(error);
+    }
+  });
+  app.get('/api/ticker-suggestions', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { query } = req.query;
+
+      if (!query || typeof query !== 'string') {
+        res.status(400).json({ error: 'Query parameter is required' });
+        return;
+      }
+
+      const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+      const url = `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${encodeURIComponent(
+        query
+      )}&apikey=${apiKey}`;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch ticker suggestions from AlphaVantage');
+      }
+
+      const data = await response.json();
+      res.json(data.bestMatches || []);
+    } catch (error) {
+      console.error('Error fetching ticker suggestions:', error);
       next(error);
     }
   });
