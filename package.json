@@ -1,29 +1,16 @@
 {
-  "name": "alpaca-trading-interface",
+  "name": "alpaca-client",
   "version": "1.0.0",
-  "description": "Alpaca Trading Account Interface",
-  "main": "dist/backend/server.js",
-  "type": "module",
+  "private": true,
   "scripts": {
-    "start": "NODE_ENV=production npm run build && concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:backend": "NODE_ENV=production node --loader ts-node/esm dist/backend/server.js",
-    "start:frontend": "npx tailwindcss -i ./src/frontend/styles.css -o ./dist/styles.css --watch",
-    "build": "tsc && npx tailwindcss -i ./src/frontend/styles.css -o ./dist/styles.css && cp src/frontend/index.html dist/index.html",
-    "dev": "NODE_ENV=development npm run build && nodemon --exec node --loader ts-node/esm dist/backend/server.js"
-  },
-  "dependencies": {
-    "@alpacahq/alpaca-trade-api": "^3.1.2",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.1"
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build",
+    "test": "cd client && npm test"
   },
   "devDependencies": {
-    "@types/dotenv": "^8.2.3",
-    "@types/express": "^5.0.0",
-    "@types/node": "^22.9.0",
-    "concurrently": "^9.1.0",
-    "nodemon": "^3.0.1",
-    "tailwindcss": "^3.4.15",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "concurrently": "^9.1.0"
   }
 }
