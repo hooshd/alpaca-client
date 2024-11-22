@@ -158,6 +158,80 @@ async function submitOrder(orderData: CreateOrderRequest) {
   }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  const tickerInput = document.getElementById('ticker') as HTMLInputElement;
+  const resultsContainer = document.getElementById('ticker-results') as HTMLDivElement;
+
+  let searchTimeout: number | null = null;
+
+  const fetchTickerSuggestions = async (query: string) => {
+    const apiKey = 'JFSP6UDXSY1S5M9T'; // Replace with your AlphaVantage API key
+    const url = `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${encodeURIComponent(query)}&apikey=${apiKey}`;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch data');
+      }
+      const data = await response.json();
+      return data.bestMatches || [];
+    } catch (error) {
+      console.error('Error fetching ticker suggestions:', error);
+      return [];
+    }
+  };
+
+  const renderResults = (results: any[]) => {
+    if (results.length === 0) {
+      resultsContainer.classList.add('hidden');
+      return;
+    }
+
+    resultsContainer.innerHTML = results
+      .map(
+        (result) => `
+          <div class="px-4 py-2 cursor-pointer hover:bg-gray-200" data-symbol="${result['1. symbol']}" data-name="${result['2. name']}">
+            <strong>${result['1. symbol']}</strong> - ${result['2. name']}
+          </div>
+        `
+      )
+      .join('');
+
+    resultsContainer.classList.remove('hidden');
+
+    // Add click event listeners to suggestions
+    Array.from(resultsContainer.children).forEach((child) => {
+      child.addEventListener('click', (event: Event) => {
+        const target = event.currentTarget as HTMLDivElement;
+        tickerInput.value = target.getAttribute('data-symbol') || '';
+        resultsContainer.classList.add('hidden'); // Hide results after selection
+      });
+    });
+  };
+
+  tickerInput.addEventListener('input', () => {
+    const query = tickerInput.value.trim();
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    if (query.length === 0) {
+      resultsContainer.classList.add('hidden');
+      return;
+    }
+
+    searchTimeout = window.setTimeout(async () => {
+      const results = await fetchTickerSuggestions(query);
+      renderResults(results);
+    }, 300); // Debounce API calls
+  });
+
+  // Hide results if clicked outside
+  document.addEventListener('click', (event) => {
+    if (!resultsContainer.contains(event.target as Node) && event.target !== tickerInput) {
+      resultsContainer.classList.add('hidden');
+    }
+  });
+});
+
 async function initializeApp() {
   try {
     // Update last updated time on initial load

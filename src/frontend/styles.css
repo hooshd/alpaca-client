@@ -31,3 +31,11 @@ html {
 .negative-value {
   color: #e74c3c; /* Alpaca Red */
 }
+
+#ticker-results {
+  z-index: 50; 
+  width: 100%; 
+  max-height: 12rem; 
+  background-color: #fff; 
+  border: 1px solid rgba(209, 213, 219, 1)
+}
