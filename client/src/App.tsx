@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAlpaca } from './context/AlpacaContext';
 import AccountInfo from './components/AccountInfo';
 import BalanceSection from './components/BalanceSection';
@@ -6,6 +6,7 @@ import MarketTime from './components/MarketTime';
 import CreateOrder from './components/CreateOrder';
 import Orders from './components/Orders';
 import Positions from './components/Positions';
+import AccountNavChart from './components/AccountNavChart'; // Importing the new chart component
 
 function App() {
   const {
@@ -73,6 +74,9 @@ function App() {
           />
           <MarketTime lastUpdated={lastUpdated} />
         </div>
+
+        {/* Account NAV Chart Section */}
+        <AccountNavChart /> {/* Updated to remove the period prop */}
 
         {/* Create Order Section */}
         <CreateOrder onOrderSubmit={submitOrder} />
