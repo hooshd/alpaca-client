@@ -7,6 +7,11 @@ interface BalanceSectionProps {
   accountValue: string;
 }
 
+// Utility function to format numbers as currency
+const formatCurrency = (value: number): string => {
+  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
 export const BalanceSection: React.FC<BalanceSectionProps> = ({ accountInfo, isLoading, accountValue }) => {
   return (
     <section className="bg-white p-6 rounded-lg shadow">
@@ -14,15 +19,15 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({ accountInfo, isL
       <div className="grid grid-cols-2 gap-4 text-base text-gray-600">
         <h2 className="font-medium">Current NAV</h2>
         <div className="text-right font-semibold text-gray-800">
-          {isLoading ? 'Loading...' : accountValue}
+          {isLoading ? 'Loading...' : formatCurrency(Number(accountValue))}
         </div>
         <div className="font-medium">Cash Balance:</div>
         <div className="text-right font-semibold text-green-500">
-          {isLoading ? 'Loading...' : accountInfo?.cash}
+          {isLoading ? 'Loading...' : formatCurrency(Number(accountInfo?.cash))}
         </div>
         <div className="font-medium">Buying Power:</div>
         <div className="text-right font-semibold text-blue-500">
-          {isLoading ? 'Loading...' : accountInfo?.buying_power}
+          {isLoading ? 'Loading...' : formatCurrency(Number(accountInfo?.buying_power))}
         </div>
       </div>
     </section>

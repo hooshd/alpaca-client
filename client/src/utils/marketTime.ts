@@ -103,7 +103,7 @@ export class MarketHoursCalculator {
     }
 
     static determineMarketStatus(time: Date = getUSEasternTime()): { 
-        status: 'OPEN' | 'EXTENDED' | 'CLOSED', 
+        status: 'OPEN' | 'EXTENDED HOURS' | 'CLOSED', 
         nextStatus: string 
     } {
         const day = time.getDay();
@@ -153,7 +153,7 @@ export class MarketHoursCalculator {
             (currentTimeInMinutes >= marketCloseTime && currentTimeInMinutes < postMarketCloseTime)
         ) {
             return {
-                status: 'EXTENDED',
+                status: 'EXTENDED HOURS',
                 nextStatus: currentTimeInMinutes < marketOpenTime 
                     ? 'Market opens at 9:30 AM ET' 
                     : 'Market closes at 8:00 PM ET'

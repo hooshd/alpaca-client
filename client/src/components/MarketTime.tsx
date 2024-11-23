@@ -27,7 +27,7 @@ export const MarketTime: React.FC<MarketTimeProps> = ({ lastUpdated }) => {
     switch (status) {
       case 'OPEN':
         return 'bg-green-600';
-      case 'EXTENDED':
+      case 'EXTENDED HOURS':
         return 'bg-yellow-600';
       default:
         return 'bg-gray-600';
@@ -40,7 +40,7 @@ export const MarketTime: React.FC<MarketTimeProps> = ({ lastUpdated }) => {
         Market Time: {formatTime(currentTime)}
       </div>
       <div className={`px-4 py-2 rounded-full text-white font-medium ${getStatusColor(marketStatus.status)} inline-block`}>
-        The market is: {marketStatus.status}
+        Market status: {marketStatus.status}
       </div>
       <div className="text-sm text-gray-500 mt-4">
         {marketStatus.nextStatus}

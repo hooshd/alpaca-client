@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Position } from '../types';
 import useLatestPrice from '../hooks/useLatestPrice';
 
@@ -8,13 +8,21 @@ interface PositionCardProps {
 
 const PositionCard: React.FC<PositionCardProps> = ({ position }) => {
   const { price: latestPrice, isLoading } = useLatestPrice(position.symbol);
-  
+  const [lastKnownPrice, setLastKnownPrice] = useState<number | null>(position.currentPrice);
+
+  useEffect(() => {
+    if (!isLoading && latestPrice !== undefined) {
+      setLastKnownPrice(latestPrice);
+    }
+  }, [latestPrice, isLoading]);
+
   const calculateChange = () => {
-    if (!latestPrice) return { value: 0, percentage: 0 };
+    const priceToUse = latestPrice !== null ? latestPrice : lastKnownPrice || 0; // Fallback to 0 if both are null
+    if (!priceToUse) return { value: 0, percentage: 0 };
     
-    const currentValue = latestPrice * position.quantity;
-    const change = currentValue - position.marketValue;
-    const percentage = (change / position.marketValue) * 100;
+    const currentValue = priceToUse * position.quantity;
+    const change = currentValue - (lastKnownPrice || 0) * position.quantity; // Fallback to 0 if lastKnownPrice is null
+    const percentage = (change / ((lastKnownPrice || 0) * position.quantity)) * 100 || 0; // Fallback to 0 if lastKnownPrice is null
     
     return { value: change, percentage };
   };
@@ -29,7 +37,8 @@ const PositionCard: React.FC<PositionCardProps> = ({ position }) => {
     return price.toFixed(2);
   };
 
-  const displayPrice = isLoading ? '...' : formatPrice(latestPrice || position.currentPrice);
+  const displayPrice = isLoading ? formatPrice(lastKnownPrice) : formatPrice(latestPrice);
+  const marketValue = (latestPrice || lastKnownPrice || 0) * position.quantity;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
@@ -48,12 +57,8 @@ const PositionCard: React.FC<PositionCardProps> = ({ position }) => {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-        <div>Market Value:</div>
-        <div className="text-right">${formatPrice(position.marketValue)}</div>
-        <div>Current Price:</div>
-        <div className="text-right">
-          ${displayPrice}
-        </div>
+        <div>Total market value</div>
+        <div className="text-right">${formatPrice(marketValue)}</div>
       </div>
     </div>
   );
