@@ -1,14 +1,51 @@
 import { Express, Request, Response } from 'express';
-import { createAlpacaClient } from './alpacaClient';
-import { fetchLastTrade } from './polygonClient'; // Importing the new function
+import { AlpacaClient } from './alpacaClient';
+import { fetchLastTrade } from './polygonClient';
 import { Order, Position, Asset, AccountInfo } from './types';
+import { getAccounts, SheetAccount } from './sheetsClient';
 
 export const setupRoutes = (app: Express) => {
-    const alpaca = createAlpacaClient();
+    let currentAccount: SheetAccount | null = null;
+    let alpaca: AlpacaClient | null = null;
+
+    const initializeAlpacaClient = (account: SheetAccount) => {
+        currentAccount = account;
+        alpaca = new AlpacaClient({
+            keyId: account.alpacaApiKey,
+            secretKey: account.alpacaApiSecret
+        });
+    };
+
+    // Get available accounts from Google Sheets
+    app.get('/api/accounts', async (_req: Request, res: Response) => {
+        try {
+            const accounts = await getAccounts();
+            if (accounts.length > 0 && !currentAccount) {
+                initializeAlpacaClient(accounts[0]);
+            }
+            res.json(accounts);
+        } catch (error: any) {
+            console.error('Error fetching accounts:', error);
+            res.status(500).json({ error: `Failed to fetch accounts: ${error?.message || 'Unknown error'}` });
+        }
+    });
+
+    // Switch account
+    app.post('/api/account/switch', async (req: Request, res: Response) => {
+        try {
+            const account = req.body as SheetAccount;
+            initializeAlpacaClient(account);
+            res.json({ message: 'Account switched successfully' });
+        } catch (error: any) {
+            console.error('Error switching account:', error);
+            res.status(500).json({ error: `Failed to switch account: ${error?.message || 'Unknown error'}` });
+        }
+    });
 
     // Get account information
     app.get('/api/account', async (_req: Request, res: Response) => {
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             const account = await alpaca.getAccount();
             res.json(account as AccountInfo);
         } catch (error: any) {
@@ -20,8 +57,8 @@ export const setupRoutes = (app: Express) => {
     // Get positions
     app.get('/api/positions', async (_req: Request, res: Response) => {
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             const positions = await alpaca.getPositions();
-            // Return the full position data without transformation
             res.json(positions as Position[]);
         } catch (error: any) {
             console.error('Error fetching positions:', error);
@@ -35,8 +72,9 @@ export const setupRoutes = (app: Express) => {
         const { qty, percentage } = req.query;
 
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             const response = await alpaca.closePosition(symbol_or_asset_id, { qty: qty ? Number(qty) : undefined, percentage: percentage ? Number(percentage) : undefined });
-            console.log('Close position response:', response); // Log the response
+            console.log('Close position response:', response);
             res.status(200).json(response);
         } catch (error: any) {
             console.error('Error closing position:', error);
@@ -49,8 +87,9 @@ export const setupRoutes = (app: Express) => {
         const cancelOrders = req.query.cancel_orders === 'true';
 
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             const response = await alpaca.closeAllPositions({ cancel_orders: cancelOrders });
-            console.log('Close positions response:', response); // Log the response
+            console.log('Close positions response:', response);
             res.status(207).json(response);
         } catch (error: any) {
             console.error('Error closing positions:', error);
@@ -61,6 +100,7 @@ export const setupRoutes = (app: Express) => {
     // Get orders
     app.get('/api/orders', async (_req: Request, res: Response) => {
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             const orders = await alpaca.getOrders({
                 status: 'all',
                 limit: 100,
@@ -78,6 +118,7 @@ export const setupRoutes = (app: Express) => {
         const { symbol, side, quantityType, quantity, orderType, limitPrice, extendedHours } = req.body;
 
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             const order = await alpaca.createOrder({
                 symbol,
                 qty: quantityType === 'qty' ? quantity : undefined,
@@ -92,7 +133,6 @@ export const setupRoutes = (app: Express) => {
         } catch (error: any) {
             console.error('Error creating order:', error);
             if (error.response) {
-                // Return specific error messages from Alpaca API
                 res.status(error.response.status).json({ error: error.response.data });
             } else {
                 res.status(500).json({ error: `Failed to create order: ${error?.message || 'Unknown error'}` });
@@ -103,6 +143,7 @@ export const setupRoutes = (app: Express) => {
     // Cancel order
     app.delete('/api/orders/:orderId/cancel', async (req: Request, res: Response) => {
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             await alpaca.cancelOrder(req.params.orderId);
             res.json({ message: 'Order cancelled successfully' });
         } catch (error: any) {
@@ -114,6 +155,7 @@ export const setupRoutes = (app: Express) => {
     // Get ticker suggestions
     app.get('/api/ticker-suggestions', async (req: Request, res: Response) => {
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             const query = req.query.query as string;
             const assets = await alpaca.getAssets({
                 status: 'active',
@@ -141,6 +183,7 @@ export const setupRoutes = (app: Express) => {
     // Get latest price
     app.get('/api/latest-price', async (req: Request, res: Response) => {
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             const symbol = req.query.symbol as string;
             const latestPrice = await fetchLastTrade(symbol);
             res.json(latestPrice);
@@ -157,6 +200,7 @@ export const setupRoutes = (app: Express) => {
         const intraday_reporting = (req.query.intraday_reporting || 'market_hours') as string;
         
         try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
             console.log('Fetching portfolio history with params:', { period, timeframe, intraday_reporting });
             const history = await alpaca.getAccountPortfolioHistory({
                 period,

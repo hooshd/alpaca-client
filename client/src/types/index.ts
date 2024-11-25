@@ -17,7 +17,7 @@ export interface Position {
   lastday_price: string;
   change_today: string;
   qty_available: string;
-  limit_price?: number; // Added limit_price property
+  limit_price?: number;
 }
 
 export interface AccountInfo {
@@ -26,6 +26,18 @@ export interface AccountInfo {
   cash: string;
   buying_power: string;
   equity: string;
+}
+
+export interface SheetAccount {
+  display_name: string;
+  name: string;
+  type: string;
+  alpacaApiKey: string;
+  alpacaApiSecret: string;
+  email: string;
+  openAiApiKey: string;
+  openAiModel: string;
+  adapticId: string;
 }
 
 export interface Order {
@@ -42,5 +54,5 @@ export interface Order {
   time_in_force: string;
   extended_hours: boolean;
   created_at: string;
-  limit_price?: number; // Added limit_price property
+  limit_price?: number;
 }

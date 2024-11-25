@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AccountInfo, Order, Position } from '../types';
+import { AccountInfo, Order, Position, SheetAccount } from '../types';
 
 interface AlpacaContextType {
   accountInfo: AccountInfo | null;
@@ -7,9 +7,12 @@ interface AlpacaContextType {
   positions: Position[];
   isLoading: boolean;
   error: string | null;
+  availableAccounts: SheetAccount[];
+  selectedAccount: SheetAccount | null;
   refreshData: () => Promise<void>;
   submitOrder: (orderData: any) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
+  switchAccount: (account: SheetAccount) => Promise<void>;
 }
 
 const AlpacaContext = createContext<AlpacaContextType | undefined>(undefined);
@@ -32,6 +35,22 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availableAccounts, setAvailableAccounts] = useState<SheetAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<SheetAccount | null>(null);
+
+  const fetchAvailableAccounts = async () => {
+    try {
+      const response = await fetch('/api/accounts');
+      if (!response.ok) throw new Error('Failed to fetch accounts');
+      const accounts = await response.json();
+      setAvailableAccounts(accounts);
+      if (accounts.length > 0 && !selectedAccount) {
+        setSelectedAccount(accounts[0]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch accounts');
+    }
+  };
 
   const fetchAccountInfo = async () => {
     try {
@@ -112,14 +131,40 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
     }
   };
 
+  const switchAccount = async (account: SheetAccount) => {
+    try {
+      const response = await fetch('/api/account/switch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(account)
+      });
+      
+      if (!response.ok) throw new Error('Failed to switch account');
+      
+      setSelectedAccount(account);
+      await refreshData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to switch account');
+      throw err;
+    }
+  };
+
   useEffect(() => {
-    refreshData();
+    fetchAvailableAccounts();
+  }, []);
+
+  useEffect(() => {
+    if (selectedAccount) {
+      refreshData();
+    }
     
     // Refresh data every minute
     const interval = setInterval(refreshData, 60000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedAccount]);
 
   const value = {
     accountInfo,
@@ -127,9 +172,12 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
     positions,
     isLoading,
     error,
+    availableAccounts,
+    selectedAccount,
     refreshData,
     submitOrder,
-    cancelOrder
+    cancelOrder,
+    switchAccount
   };
 
   return (

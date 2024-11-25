@@ -21,7 +21,7 @@ interface BarIterator {
     [Symbol.asyncIterator](): BarIterator;
 }
 
-class AlpacaClient {
+export class AlpacaClient {
     private accountBaseUrl: string;
     private dataBaseUrl: string;
     private headers: HeadersInit;

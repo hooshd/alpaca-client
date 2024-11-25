@@ -48,11 +48,11 @@ function App() {
     <div className="bg-gray-50 min-h-screen flex flex-col items-center p-6 font-inter">
       <div className="w-full max-w-3xl bg-white shadow-lg rounded-xl p-8">
         <h1 className="text-3xl font-semibold mb-8 text-center text-gray-800">
-          Alpaca Dashboard
+          The Money Glitch
         </h1>
 
         {/* Account Info */}
-        <AccountInfo accountInfo={accountInfo} isLoading={isLoading} />
+        <AccountInfo />
 
         {/* Balance and Market Time Sections */}
         <div className="grid sm:grid-cols-2 gap-8 mb-8">
