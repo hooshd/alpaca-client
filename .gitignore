@@ -4,6 +4,9 @@ node_modules/
 # Environment variables
 .env
 
+# Service account credentials
+server/service-account.json
+
 # Build output
 dist/
 

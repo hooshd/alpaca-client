@@ -7,26 +7,90 @@ import { getAccounts, SheetAccount } from './sheetsClient';
 export const setupRoutes = (app: Express) => {
     let currentAccount: SheetAccount | null = null;
     let alpaca: AlpacaClient | null = null;
+    let isInitialized = false;
 
-    const initializeAlpacaClient = (account: SheetAccount) => {
-        currentAccount = account;
-        alpaca = new AlpacaClient({
-            keyId: account.alpacaApiKey,
-            secretKey: account.alpacaApiSecret
-        });
+    const validateCredentials = (account: SheetAccount) => {
+        if (!account.alpacaApiKey || !account.alpacaApiSecret) {
+            throw new Error('Invalid account credentials: API key and secret are required');
+        }
+        if (!process.env.ALPACA_ACCOUNT_TYPE) {
+            throw new Error('ALPACA_ACCOUNT_TYPE environment variable is not set');
+        }
+        if (!['paper', 'live'].includes(process.env.ALPACA_ACCOUNT_TYPE)) {
+            throw new Error('ALPACA_ACCOUNT_TYPE must be either "paper" or "live"');
+        }
+    };
+
+    const initializeAlpacaClient = async (account: SheetAccount): Promise<void> => {
+        try {
+            console.log(`Initializing Alpaca client for account: ${account.display_name}`);
+            console.log(`Account type: ${process.env.ALPACA_ACCOUNT_TYPE}`);
+            
+            validateCredentials(account);
+            
+            currentAccount = account;
+            alpaca = new AlpacaClient({
+                keyId: account.alpacaApiKey,
+                secretKey: account.alpacaApiSecret
+            });
+
+            // Verify the client works by making a test call
+            const accountInfo = await alpaca.getAccount();
+            if (!accountInfo) {
+                throw new Error('Failed to verify account access');
+            }
+            
+            console.log('Successfully verified Alpaca account access');
+            isInitialized = true;
+
+        } catch (error) {
+            isInitialized = false;
+            alpaca = null;
+            currentAccount = null;
+            console.error('Failed to initialize Alpaca client:', error);
+            throw error;
+        }
+    };
+
+    const ensureInitialized = async (req: Request, res: Response, next: Function) => {
+        try {
+            if (!isInitialized) {
+                console.log('Service not initialized, attempting to initialize...');
+                const accounts = await getAccounts();
+                if (accounts.length === 0) {
+                    throw new Error('No accounts available in Google Sheet');
+                }
+                await initializeAlpacaClient(accounts[0]);
+            }
+            next();
+        } catch (error: any) {
+            const errorMessage = error?.message || 'Unknown error';
+            console.error('Initialization error:', errorMessage);
+            res.status(500).json({ 
+                error: `Service not initialized: ${errorMessage}`,
+                needsInitialization: true 
+            });
+        }
     };
 
     // Get available accounts from Google Sheets
     app.get('/api/accounts', async (_req: Request, res: Response) => {
         try {
+            console.log('Fetching accounts from Google Sheet...');
             const accounts = await getAccounts();
-            if (accounts.length > 0 && !currentAccount) {
-                initializeAlpacaClient(accounts[0]);
+            console.log(`Found ${accounts.length} accounts`);
+            
+            if (accounts.length > 0 && !isInitialized) {
+                console.log('Attempting to initialize with first account...');
+                await initializeAlpacaClient(accounts[0]);
             }
             res.json(accounts);
         } catch (error: any) {
             console.error('Error fetching accounts:', error);
-            res.status(500).json({ error: `Failed to fetch accounts: ${error?.message || 'Unknown error'}` });
+            res.status(500).json({ 
+                error: `Failed to fetch accounts: ${error?.message || 'Unknown error'}`,
+                needsInitialization: !isInitialized
+            });
         }
     });
 
@@ -34,13 +98,24 @@ export const setupRoutes = (app: Express) => {
     app.post('/api/account/switch', async (req: Request, res: Response) => {
         try {
             const account = req.body as SheetAccount;
-            initializeAlpacaClient(account);
+            console.log(`Switching to account: ${account.display_name}`);
+            await initializeAlpacaClient(account);
             res.json({ message: 'Account switched successfully' });
         } catch (error: any) {
             console.error('Error switching account:', error);
             res.status(500).json({ error: `Failed to switch account: ${error?.message || 'Unknown error'}` });
         }
     });
+
+    // Apply ensureInitialized middleware to all routes that need it
+    app.use([
+        '/api/account',
+        '/api/positions',
+        '/api/orders',
+        '/api/ticker-suggestions',
+        '/api/latest-price',
+        '/api/account/portfolio/history'
+    ], ensureInitialized);
 
     // Get account information
     app.get('/api/account', async (_req: Request, res: Response) => {
@@ -67,7 +142,7 @@ export const setupRoutes = (app: Express) => {
     });
 
     // Close a specific position
-    app.delete('/api/positions/close/:symbol_or_asset_id', async (req: Request, res: Response) => {
+    app.delete('/api/positions/close/:symbol_or_asset_id', ensureInitialized, async (req: Request, res: Response) => {
         const { symbol_or_asset_id } = req.params;
         const { qty, percentage } = req.query;
 
@@ -83,7 +158,7 @@ export const setupRoutes = (app: Express) => {
     });
 
     // Close all positions
-    app.delete('/api/positions', async (req: Request, res: Response) => {
+    app.delete('/api/positions', ensureInitialized, async (req: Request, res: Response) => {
         const cancelOrders = req.query.cancel_orders === 'true';
 
         try {
@@ -114,7 +189,7 @@ export const setupRoutes = (app: Express) => {
     });
 
     // Create order
-    app.post('/api/orders/create', async (req: Request, res: Response) => {
+    app.post('/api/orders/create', ensureInitialized, async (req: Request, res: Response) => {
         const { symbol, side, quantityType, quantity, orderType, limitPrice, extendedHours } = req.body;
 
         try {
@@ -141,7 +216,7 @@ export const setupRoutes = (app: Express) => {
     });
 
     // Cancel order
-    app.delete('/api/orders/:orderId/cancel', async (req: Request, res: Response) => {
+    app.delete('/api/orders/:orderId/cancel', ensureInitialized, async (req: Request, res: Response) => {
         try {
             if (!alpaca) throw new Error('Alpaca client not initialized');
             await alpaca.cancelOrder(req.params.orderId);

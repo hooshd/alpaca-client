@@ -1,5 +1,5 @@
+import 'dotenv/config';
 import { google } from 'googleapis';
-import path from 'path';
 
 export interface SheetAccount {
   display_name: string;
@@ -16,10 +16,32 @@ export interface SheetAccount {
 const SPREADSHEET_ID = '1XooIEued5d1znnz5Gufh3--U_Ahn3WMNgOgrlR-bjGc';
 const SHEET_NAME = 'config';
 
+function validateEnvironmentVariables() {
+  const required = ['GOOGLE_PRIVATE_KEY', 'GOOGLE_CLIENT_EMAIL', 'GOOGLE_PROJECT_ID'];
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+
+  // Ensure private key is properly formatted
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+  if (!privateKey?.includes('BEGIN PRIVATE KEY') || !privateKey?.includes('END PRIVATE KEY')) {
+    throw new Error('GOOGLE_PRIVATE_KEY is not properly formatted');
+  }
+}
+
 export async function getAccounts(): Promise<SheetAccount[]> {
   try {
+    // Validate environment variables before proceeding
+    validateEnvironmentVariables();
+
     const auth = new google.auth.GoogleAuth({
-      keyFile: path.join(__dirname, '../service-account.json'),
+      credentials: {
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'), // Handle escaped newlines
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        project_id: process.env.GOOGLE_PROJECT_ID,
+      },
       scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
     });
 
@@ -33,8 +55,7 @@ export async function getAccounts(): Promise<SheetAccount[]> {
     const rows = response.data.values;
     
     if (!rows || rows.length === 0) {
-      console.error('No data found in sheet');
-      return [];
+      throw new Error('No data found in sheet');
     }
 
     return rows.map((row) => ({
