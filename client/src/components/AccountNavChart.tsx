@@ -33,13 +33,35 @@ const AccountNavChart = () => {
     fetchPortfolioHistory();
   }, [period, refreshData]);
 
-  const formatCurrency = (value: number) => {
-    return `$${value.toLocaleString()}`; // Format as dollar amount
+  const formatCurrency = (value: number, full: boolean = false) => {
+    if (full) {
+      return `$${value.toLocaleString()}`; // Full format
+    }
+    // Compact format
+    const absValue = Math.abs(value);
+    if (absValue >= 1e3 && absValue < 1e6) {
+      return `$${(value / 1e3).toFixed(0)}K`; // e.g., "$25K"
+    } else if (absValue >= 1e6) {
+      return `$${(value / 1e6).toFixed(0)}M`; // e.g., "$2M"
+    }
+    return value.toString(); // Return as is for values less than 1K
   };
 
   const handlePeriodChange = (newPeriod: string) => {
     setPeriod(newPeriod);
   };
+
+  const getMaxValue = () => {
+    return Math.max(...chartData.map(data => data.equity));
+  };
+
+  const roundUpToSignificant = (value: number) => {
+    const factor = Math.pow(10, Math.floor(Math.log10(value)));
+    return Math.ceil(value / factor) * factor;
+  };
+
+  const maxValue = getMaxValue();
+  const yAxisDomain = [0, roundUpToSignificant(maxValue)];
 
   if (error) return <div>Error fetching data: {error}</div>;
 
@@ -64,13 +86,14 @@ const AccountNavChart = () => {
             }} 
           />
           <YAxis 
-            tick={{ fontSize: 14, fill: '#4A90E2' }} // Increased font size
-            tickFormatter={formatCurrency} // Use the currency formatter
+            hide={true} // Completely hide the Y-axis
+            domain={yAxisDomain} // Set the domain to scale above the max value
           />
           <Tooltip 
             contentStyle={{ backgroundColor: '#fff', border: 'none', borderRadius: '8px' }} 
+            formatter={(value: number) => [formatCurrency(value, true), 'Equity']} // Show full format on hover
           />
-          <Line type="monotone" dataKey="equity" stroke="#4A90E2" strokeWidth={2} /> {/* Increased line thickness */}
+          <Line type="monotone" dataKey="equity" stroke="#4A90E2" strokeWidth={2} label={{ position: 'top', formatter: (value: number) => formatCurrency(value) }} /> {/* Added label for points */}
         </LineChart>
       </ResponsiveContainer>
     </div>
