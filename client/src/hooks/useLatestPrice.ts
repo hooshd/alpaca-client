@@ -12,7 +12,7 @@ export const useLatestPrice = (symbol: string) => {
         throw new Error('Failed to fetch the latest price');
       }
       const data = await response.json();
-      return data.price;
+      return data.results.p; // Updated to match the API response structure
     } catch (error) {
       console.error('Error fetching the latest price:', error);
       throw error;

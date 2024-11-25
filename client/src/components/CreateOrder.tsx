@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TickerSearch from './TickerSearch';
+import useLatestPrice from '../hooks/useLatestPrice';
 
 interface OrderFormData {
   symbol: string;
@@ -27,8 +28,24 @@ export const CreateOrder: React.FC<CreateOrderProps> = ({ onOrderSubmit }) => {
   });
 
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [latestPrice, setLatestPrice] = useState<string>('Loading...');
-  const [totalValue, setTotalValue] = useState<string>('Calculating...');
+  const [modalMessage, setModalMessage] = useState<string>('');
+  const [isError, setIsError] = useState<boolean>(false);
+  
+  // Use the latest price hook
+  const { price: latestPrice, isLoading: isPriceLoading, error: priceError } = useLatestPrice(formData.symbol);
+
+  // Calculate total value
+  const calculateTotalValue = (): string => {
+    if (!latestPrice || !formData.quantity) return 'N/A';
+    
+    if (formData.quantityType === 'qty') {
+      const total = latestPrice * parseFloat(formData.quantity);
+      return `$${total.toFixed(2)}`;
+    } else {
+      // For notional orders, the quantity is the dollar amount
+      return `$${parseFloat(formData.quantity).toFixed(2)}`;
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -42,17 +59,40 @@ export const CreateOrder: React.FC<CreateOrderProps> = ({ onOrderSubmit }) => {
 
   const handleTickerSelect = (symbol: string) => {
     setFormData(prev => ({ ...prev, symbol }));
-    // TODO: Fetch latest price for the selected symbol
+  };
+
+  const validateForm = (): string | null => {
+    if (!formData.symbol) return 'Symbol is required';
+    if (!formData.quantity) return 'Quantity is required';
+    if (parseFloat(formData.quantity) <= 0) return 'Quantity must be greater than 0';
+    if (formData.orderType === 'limit' && (!formData.limitPrice || parseFloat(formData.limitPrice) <= 0)) {
+      return 'Valid limit price is required for limit orders';
+    }
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const validationError = validateForm();
+    if (validationError) {
+      setModalMessage(validationError);
+      setIsError(true);
+      setShowConfirmation(true);
+      return;
+    }
+
+    // Reset error state and message when showing confirmation
+    setIsError(false);
+    setModalMessage('');
     setShowConfirmation(true);
   };
 
   const handleConfirmOrder = async () => {
     try {
       await onOrderSubmit(formData);
+      setModalMessage('Order placed successfully!');
+      setIsError(false);
       setShowConfirmation(false);
       // Reset form
       setFormData({
@@ -66,7 +106,8 @@ export const CreateOrder: React.FC<CreateOrderProps> = ({ onOrderSubmit }) => {
       });
     } catch (error) {
       console.error('Error submitting order:', error);
-      alert('Failed to submit order. Please try again.');
+      setModalMessage(`Failed to submit order: ${(error as Error).message || 'Please try again.'}`);
+      setIsError(true);
     }
   };
 
@@ -198,36 +239,60 @@ export const CreateOrder: React.FC<CreateOrderProps> = ({ onOrderSubmit }) => {
       {showConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full">
-            <h2 className="text-2xl font-semibold mb-6">Confirm Order</h2>
-            <div className="mb-6">
-              <p><strong>Symbol:</strong> {formData.symbol}</p>
-              <p><strong>Side:</strong> {formData.side.toUpperCase()}</p>
-              <p><strong>Type:</strong> {formData.orderType.toUpperCase()}</p>
-              <p><strong>{formData.quantityType === 'qty' ? 'Quantity' : 'Notional Value'}:</strong> {formData.quantity}</p>
-              {formData.orderType === 'limit' && (
-                <p><strong>Limit Price:</strong> ${formData.limitPrice}</p>
-              )}
-            </div>
-            <div className="mb-6 text-gray-700">
-              <p><strong>Latest Price:</strong> {latestPrice}</p>
-              <p><strong>Total Order Value:</strong> {totalValue}</p>
-              <p className="text-sm text-gray-500 italic">
-                Executed price may vary depending on the type of order.
-              </p>
-            </div>
+            <h2 className="text-2xl font-semibold mb-6">
+              {isError ? 'Order Error' : 'Confirm Order'}
+            </h2>
+            {!isError && (
+              <div className="mb-6">
+                <p><strong>Symbol:</strong> {formData.symbol}</p>
+                <p><strong>Side:</strong> {formData.side.toUpperCase()}</p>
+                <p><strong>Type:</strong> {formData.orderType.toUpperCase()}</p>
+                <p><strong>{formData.quantityType === 'qty' ? 'Quantity' : 'Notional Value'}:</strong> {formData.quantity}</p>
+                {formData.orderType === 'limit' && (
+                  <p><strong>Limit Price:</strong> ${formData.limitPrice}</p>
+                )}
+              </div>
+            )}
+            {!isError && (
+              <div className="mb-6 text-gray-700">
+                <p>
+                  <strong>Latest Price:</strong>{' '}
+                  {isPriceLoading ? 'Loading...' : 
+                   priceError ? 'Error fetching price' :
+                   latestPrice ? `$${latestPrice.toFixed(2)}` : 'N/A'}
+                </p>
+                <p><strong>Total Order Value:</strong> {calculateTotalValue()}</p>
+                <p className="text-sm text-gray-500 italic mt-2">
+                  {formData.orderType === 'market' 
+                    ? 'Market orders may execute at a different price due to market conditions.'
+                    : 'Limit orders will only execute at the specified price or better.'}
+                </p>
+              </div>
+            )}
+            {modalMessage && (
+              <div className={`mb-6 ${isError ? 'text-red-600' : 'text-green-600'}`}>
+                <p>{modalMessage}</p>
+              </div>
+            )}
             <div className="flex justify-end space-x-4">
               <button
-                onClick={() => setShowConfirmation(false)}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
+                onClick={() => {
+                  setShowConfirmation(false);
+                  setModalMessage('');
+                  setIsError(false);
+                }}
+                className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300"
               >
-                Cancel
+                {isError ? 'Close' : 'Cancel'}
               </button>
-              <button
-                onClick={handleConfirmOrder}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                Confirm
-              </button>
+              {!isError && (
+                <button
+                  onClick={handleConfirmOrder}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Confirm
+                </button>
+              )}
             </div>
           </div>
         </div>

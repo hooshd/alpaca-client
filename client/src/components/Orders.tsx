@@ -38,6 +38,12 @@ export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefresh
     return false;
   });
 
+  const handleCancelAllOrders = async () => {
+    const openOrders = orders.filter(order => openStatuses.includes(order.status));
+    await Promise.all(openOrders.map(order => onCancelOrder(order.id)));
+    onRefreshOrders(); // Refresh orders after cancellation
+  };
+
   const formatOrder = (order: Order) => {
     const isOpen = openStatuses.includes(order.status);
     const statusClass = isOpen ? 'bg-green-100' : 'bg-gray-100';
@@ -103,6 +109,12 @@ export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefresh
           </label>
         </div>
       </div>
+      <button
+        onClick={handleCancelAllOrders}
+        className="mb-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+      >
+        Cancel All Orders
+      </button>
       <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg">
         {filteredOrders.length > 0 ? (
           filteredOrders.map(formatOrder)

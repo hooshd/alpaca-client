@@ -48,7 +48,7 @@ class AlpacaClient {
         };
     }
 
-    private async fetch<T>(endpoint: string, options: RequestInit = {}, isDataEndpoint: boolean = false): Promise<T> {
+    private async fetch<T>(endpoint: string, options: RequestInit = {}, isDataEndpoint: boolean = false): Promise<T | undefined> {
         const baseUrl = isDataEndpoint ? this.dataBaseUrl : this.accountBaseUrl;
         const headers = isDataEndpoint ? this.dataHeaders : this.headers;
         
@@ -62,18 +62,23 @@ class AlpacaClient {
             throw new Error(`Alpaca API error: ${response.statusText}. Details: ${errorText}`);
         }
 
+        // Handle empty response
+        if (response.status === 204) { // No Content
+            return undefined;
+        }
+
         return response.json();
     }
 
-    async getAccount(): Promise<AccountInfo> {
+    async getAccount(): Promise<AccountInfo | undefined> {
         return this.fetch<AccountInfo>('/v2/account');
     }
 
-    async getPositions(): Promise<Position[]> {
+    async getPositions(): Promise<Position[] | undefined> {
         return this.fetch<Position[]>('/v2/positions');
     }
 
-    async getOrders(params: { status: string; limit: number; nested: boolean }): Promise<Order[]> {
+    async getOrders(params: { status: string; limit: number; nested: boolean }): Promise<Order[] | undefined> {
         const queryParams = new URLSearchParams({
             status: params.status,
             limit: params.limit.toString(),
@@ -91,7 +96,7 @@ class AlpacaClient {
         time_in_force: string;
         limit_price?: number;
         extended_hours?: boolean;
-    }): Promise<Order> {
+    }): Promise<Order | undefined> {
         return this.fetch<Order>('/v2/orders', {
             method: 'POST',
             body: JSON.stringify(params)
@@ -102,7 +107,7 @@ class AlpacaClient {
         await this.fetch(`/v2/orders/${orderId}`, { method: 'DELETE' });
     }
 
-    async getAssets(params: { status: string; tradable: boolean }): Promise<Asset[]> {
+    async getAssets(params: { status: string; tradable: boolean }): Promise<Asset[] | undefined> {
         const queryParams = new URLSearchParams({
             status: params.status,
             tradable: params.tradable.toString()
@@ -148,7 +153,7 @@ class AlpacaClient {
         }>(`/v2/stocks/bars?${queryParams}`, {}, true);
 
         let index = 0;
-        const bars = response.bars || [];
+        const bars = response?.bars || [];
 
         const iterator: BarIterator = {
             async next() {

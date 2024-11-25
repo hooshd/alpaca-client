@@ -51,21 +51,29 @@ export const setupRoutes = (app: Express) => {
 
     // Create order
     app.post('/api/orders/create', async (req: Request, res: Response) => {
+        const { symbol, side, quantityType, quantity, orderType, limitPrice, extendedHours } = req.body;
+
+
         try {
             const order = await alpaca.createOrder({
-                symbol: req.body.symbol,
-                qty: req.body.quantityType === 'qty' ? req.body.quantity : undefined,
-                notional: req.body.quantityType === 'notional' ? req.body.quantity : undefined,
-                side: req.body.side,
-                type: req.body.orderType,
+                symbol,
+                qty: quantityType === 'qty' ? quantity : undefined,
+                notional: quantityType === 'notional' ? quantity : undefined,
+                side,
+                type: orderType,
                 time_in_force: 'day',
-                limit_price: req.body.orderType === 'limit' ? req.body.limitPrice : undefined,
-                extended_hours: req.body.extendedHours
+                limit_price: orderType === 'limit' ? limitPrice : undefined,
+                extended_hours: extendedHours
             });
             res.json(order as Order);
         } catch (error: any) {
             console.error('Error creating order:', error);
-            res.status(500).json({ error: `Failed to create order: ${error?.message || 'Unknown error'}` });
+            if (error.response) {
+                // Return specific error messages from Alpaca API
+                res.status(error.response.status).json({ error: error.response.data });
+            } else {
+                res.status(500).json({ error: `Failed to create order: ${error?.message || 'Unknown error'}` });
+            }
         }
     });
 
