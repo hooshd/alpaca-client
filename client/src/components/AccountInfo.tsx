@@ -14,11 +14,11 @@ export const AccountInfo: React.FC<AccountInfoProps> = ({ accountInfo, isLoading
       <div className="grid sm:grid-cols-2 gap-4 text-base text-gray-600">
         <div className="font-medium">User ID:</div>
         <div className="sm:text-right">
-          {isLoading ? 'Loading...' : accountInfo?.id}
+          {accountInfo?.id}
         </div>
         <div className="font-medium">Account Number:</div>
         <div className="sm:text-right">
-          {isLoading ? 'Loading...' : accountInfo?.account_number}
+          {accountInfo?.account_number}
         </div>
       </div>
     </section>

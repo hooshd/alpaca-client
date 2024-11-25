@@ -19,15 +19,15 @@ export const BalanceSection: React.FC<BalanceSectionProps> = ({ accountInfo, isL
       <div className="grid grid-cols-2 gap-4 text-base text-gray-600">
         <h2 className="font-medium">Current NAV</h2>
         <div className="text-right font-semibold text-gray-800">
-          {isLoading ? 'Loading...' : formatCurrency(Number(accountInfo?.equity))} {/* Updated to use equity */}
+          {formatCurrency(Number(accountInfo?.equity))} {/* Updated to use equity */}
         </div>
         <div className="font-medium">Cash Balance:</div>
         <div className="text-right font-semibold text-green-500">
-          {isLoading ? 'Loading...' : formatCurrency(Number(accountInfo?.cash))}
+          {formatCurrency(Number(accountInfo?.cash))}
         </div>
         <div className="font-medium">Buying Power:</div>
         <div className="text-right font-semibold text-blue-500">
-          {isLoading ? 'Loading...' : formatCurrency(Number(accountInfo?.buying_power))}
+          {formatCurrency(Number(accountInfo?.buying_power))}
         </div>
       </div>
     </section>
