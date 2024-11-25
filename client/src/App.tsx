@@ -6,7 +6,7 @@ import MarketTime from './components/MarketTime';
 import CreateOrder from './components/CreateOrder';
 import Orders from './components/Orders';
 import Positions from './components/Positions';
-import AccountNavChart from './components/AccountNavChart'; // Importing the new chart component
+import AccountNavChart from './components/AccountNavChart';
 
 function App() {
   const {
@@ -51,17 +51,6 @@ function App() {
           Alpaca Dashboard
         </h1>
 
-        {/* Update All Button */}
-        <button
-          onClick={handleRefresh}
-          disabled={isLoading}
-          className={`w-full bg-blue-600 text-white py-3 rounded-lg mb-6 hover:bg-blue-700 transition-colors duration-300 ease-in-out shadow-md ${
-            isLoading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {isLoading ? 'Updating...' : 'Update All'}
-        </button>
-
         {/* Account Info */}
         <AccountInfo accountInfo={accountInfo} isLoading={isLoading} />
 
@@ -70,19 +59,22 @@ function App() {
           <BalanceSection
             accountInfo={accountInfo}
             isLoading={isLoading}
-            accountValue={accountInfo?.cash || '0'}
+            equity={accountInfo?.equity || '0'}
           />
           <MarketTime lastUpdated={lastUpdated} />
         </div>
 
         {/* Account NAV Chart Section */}
-        <AccountNavChart /> {/* Updated to remove the period prop */}
+        <AccountNavChart />
 
         {/* Create Order Section */}
         <CreateOrder onOrderSubmit={submitOrder} />
 
         {/* Positions Section */}
-        <Positions positions={positions} />
+        <Positions 
+          positions={positions} 
+          onRefreshPositions={refreshData}
+        />
 
         {/* Orders Section */}
         <Orders

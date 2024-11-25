@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Order } from '../types';
+import { formatCurrency } from '../utils/formatting';
 
 interface OrdersProps {
   orders: Order[];
@@ -15,7 +16,7 @@ const openStatuses = [
   'pending_new',
   'accepted_for_bidding',
   'stopped',
-  'calculated'
+  'calculated',
 ];
 
 const closedStatuses = [
@@ -25,22 +26,30 @@ const closedStatuses = [
   'pending_cancel',
   'pending_replace',
   'rejected',
-  'suspended'
+  'suspended',
 ];
 
 export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefreshOrders }) => {
   const [showOpen, setShowOpen] = useState(true);
   const [showClosed, setShowClosed] = useState(true);
 
-  const filteredOrders = orders.filter(order => {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      onRefreshOrders(); // Call the refresh function at the specified interval
+    }, 5000); // Refresh every 5 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [onRefreshOrders]);
+
+  const filteredOrders = orders.filter((order) => {
     if (showOpen && openStatuses.includes(order.status)) return true;
     if (showClosed && closedStatuses.includes(order.status)) return true;
     return false;
   });
 
   const handleCancelAllOrders = async () => {
-    const openOrders = orders.filter(order => openStatuses.includes(order.status));
-    await Promise.all(openOrders.map(order => onCancelOrder(order.id)));
+    const openOrders = orders.filter((order) => openStatuses.includes(order.status));
+    await Promise.all(openOrders.map((order) => onCancelOrder(order.id)));
     onRefreshOrders(); // Refresh orders after cancellation
   };
 
@@ -55,30 +64,23 @@ export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefresh
           <div>
             <span className="font-semibold">{order.symbol}</span>
             <span className="ml-2 text-sm text-gray-600">
-              {order.side.toUpperCase()} {quantityDisplay}
+              {order.side.toUpperCase()} {quantityDisplay} at {order.type === 'market' ?'market price' : `limit price of ${formatCurrency(order.limit_price?.toString())}`}
             </span>
           </div>
           {isOpen && (
-            <button
-              onClick={() => onCancelOrder(order.id)}
-              className="text-red-600 hover:text-red-800 text-sm"
-            >
+            <button onClick={() => onCancelOrder(order.id)} className="text-red-600 hover:text-red-800 text-sm">
               Cancel
             </button>
           )}
         </div>
         <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-          <div>Type: {order.type.toUpperCase()}</div>
           <div>Status: {order.status.replace(/_/g, ' ').toUpperCase()}</div>
-          {order.filled_qty && (
+          {order.filled_qty !== '0' && (
             <>
-              <div>Filled: {order.filled_qty}</div>
-              <div>Avg Price: ${order.filled_avg_price}</div>
+              <div>Filled: {order.filled_qty} at ${order.filled_avg_price}</div>
             </>
           )}
-          <div className="col-span-2">
-            Created: {new Date(order.created_at).toLocaleString()}
-          </div>
+          <div className="col-span-2">Created: {new Date(order.created_at).toLocaleString()}</div>
         </div>
       </div>
     );
@@ -109,10 +111,7 @@ export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefresh
           </label>
         </div>
       </div>
-      <button
-        onClick={handleCancelAllOrders}
-        className="mb-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
-      >
+      <button onClick={handleCancelAllOrders} className="mb-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
         Cancel All Orders
       </button>
       <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg">

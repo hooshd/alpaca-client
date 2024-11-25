@@ -29,12 +29,28 @@ export const setupRoutes = (app: Express) => {
         }
     });
 
+    // Close a specific position
+    app.delete('/api/positions/close/:symbol_or_asset_id', async (req: Request, res: Response) => {
+        const { symbol_or_asset_id } = req.params;
+        const { qty, percentage } = req.query;
+
+        try {
+            const response = await alpaca.closePosition(symbol_or_asset_id, { qty: qty ? Number(qty) : undefined, percentage: percentage ? Number(percentage) : undefined });
+            console.log('Close position response:', response); // Log the response
+            res.status(200).json(response);
+        } catch (error: any) {
+            console.error('Error closing position:', error);
+            res.status(500).json({ error: `Failed to close position: ${error?.message || 'Unknown error'}` });
+        }
+    });
+
     // Close all positions
     app.delete('/api/positions', async (req: Request, res: Response) => {
         const cancelOrders = req.query.cancel_orders === 'true';
 
         try {
             const response = await alpaca.closeAllPositions({ cancel_orders: cancelOrders });
+            console.log('Close positions response:', response); // Log the response
             res.status(207).json(response);
         } catch (error: any) {
             console.error('Error closing positions:', error);

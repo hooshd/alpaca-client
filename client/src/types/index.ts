@@ -17,6 +17,7 @@ export interface Position {
   lastday_price: string;
   change_today: string;
   qty_available: string;
+  limit_price?: number; // Added limit_price property
 }
 
 export interface AccountInfo {
@@ -41,4 +42,5 @@ export interface Order {
   time_in_force: string;
   extended_hours: boolean;
   created_at: string;
+  limit_price?: number; // Added limit_price property
 }

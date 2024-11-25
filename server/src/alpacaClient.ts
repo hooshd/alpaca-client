@@ -78,6 +78,17 @@ class AlpacaClient {
         return this.fetch<Position[]>('/v2/positions');
     }
 
+    async closePosition(symbol_or_asset_id: string, params: { qty?: number; percentage?: number } = {}): Promise<any> {
+        const queryParams = new URLSearchParams();
+        if (params.qty) {
+            queryParams.append('qty', params.qty.toString());
+        }
+        if (params.percentage) {
+            queryParams.append('percentage', params.percentage.toString());
+        }
+        return this.fetch(`/v2/positions/${symbol_or_asset_id}?${queryParams}`, { method: 'DELETE' });
+    }
+
     async closeAllPositions(params: { cancel_orders?: boolean } = {}): Promise<any> {
         const queryParams = new URLSearchParams();
         if (params.cancel_orders) {
