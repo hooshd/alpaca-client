@@ -29,6 +29,19 @@ export const setupRoutes = (app: Express) => {
         }
     });
 
+    // Close all positions
+    app.delete('/api/positions', async (req: Request, res: Response) => {
+        const cancelOrders = req.query.cancel_orders === 'true';
+
+        try {
+            const response = await alpaca.closeAllPositions({ cancel_orders: cancelOrders });
+            res.status(207).json(response);
+        } catch (error: any) {
+            console.error('Error closing positions:', error);
+            res.status(500).json({ error: `Failed to close positions: ${error?.message || 'Unknown error'}` });
+        }
+    });
+
     // Get orders
     app.get('/api/orders', async (_req: Request, res: Response) => {
         try {

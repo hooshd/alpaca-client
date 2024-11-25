@@ -78,6 +78,14 @@ class AlpacaClient {
         return this.fetch<Position[]>('/v2/positions');
     }
 
+    async closeAllPositions(params: { cancel_orders?: boolean } = {}): Promise<any> {
+        const queryParams = new URLSearchParams();
+        if (params.cancel_orders) {
+            queryParams.append('cancel_orders', 'true');
+        }
+        return this.fetch(`/v2/positions?${queryParams}`, { method: 'DELETE' });
+    }
+
     async getOrders(params: { status: string; limit: number; nested: boolean }): Promise<Order[] | undefined> {
         const queryParams = new URLSearchParams({
             status: params.status,
