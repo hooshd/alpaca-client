@@ -1,5 +1,6 @@
 import React from 'react';
 import { AccountInfo as AccountInfoType } from '../types';
+import BalanceSection from './BalanceSection'; // Import BalanceSection
 
 interface AccountInfoProps {
   accountInfo: AccountInfoType | null;
