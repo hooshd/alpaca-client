@@ -1,66 +1,63 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Position } from '../types';
-import useLatestPrice from '../hooks/useLatestPrice';
 
-interface PositionCardProps {
+const formatCurrency = (value: string | undefined): string => {
+  if (!value) return '$0.00';
+  const numValue = parseFloat(value);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numValue);
+};
+
+const formatAssetClass = (assetClass: string): string => {
+  const mapping: { [key: string]: string } = {
+    'us_equity': 'Equity',
+    'us_option': 'Option',
+    'crypto': 'Crypto'
+  };
+  return mapping[assetClass] || assetClass;
+};
+
+const formatQuantity = (qty: string, side: 'long' | 'short'): string => {
+  const numValue = parseFloat(qty);
+  return side === 'short' ? `-${Math.abs(numValue)}` : `${Math.abs(numValue)}`;
+};
+
+interface PositionRowProps {
   position: Position;
 }
 
-const PositionCard: React.FC<PositionCardProps> = ({ position }) => {
-  const { price: latestPrice, isLoading } = useLatestPrice(position.symbol);
-  const [lastKnownPrice, setLastKnownPrice] = useState<number | null>(position.currentPrice);
-
-  useEffect(() => {
-    if (!isLoading && latestPrice !== undefined) {
-      setLastKnownPrice(latestPrice);
-    }
-  }, [latestPrice, isLoading]);
-
-  const calculateChange = () => {
-    const priceToUse = latestPrice !== null ? latestPrice : lastKnownPrice || 0; // Fallback to 0 if both are null
-    if (!priceToUse) return { value: 0, percentage: 0 };
-    
-    const currentValue = priceToUse * position.quantity;
-    const change = currentValue - (lastKnownPrice || 0) * position.quantity; // Fallback to 0 if lastKnownPrice is null
-    const percentage = (change / ((lastKnownPrice || 0) * position.quantity)) * 100 || 0; // Fallback to 0 if lastKnownPrice is null
-    
-    return { value: change, percentage };
-  };
-
-  const { value: changeValue, percentage: changePercentage } = calculateChange();
-  const isPositive = changeValue >= 0;
-  const changeColor = isPositive ? 'text-green-600' : 'text-red-600';
-
-  // Safely format price with fallbacks
-  const formatPrice = (price: number | undefined | null): string => {
-    if (typeof price !== 'number') return '0.00';
-    return price.toFixed(2);
-  };
-
-  const displayPrice = isLoading ? formatPrice(lastKnownPrice) : formatPrice(latestPrice);
-  const marketValue = (latestPrice || lastKnownPrice || 0) * position.quantity;
+const PositionRow: React.FC<PositionRowProps> = ({ position }) => {
+  const isShort = position.side === 'short';
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800">{position.symbol}</h3>
-          <p className="text-sm text-gray-600">{position.quantity} shares</p>
+    <tr className="border-b border-gray-200 hover:bg-gray-50">
+      <td className="py-4 px-4">
+        <div className="font-medium text-gray-900">{position.symbol}</div>
+      </td>
+      <td className="py-4 px-4">
+        <div className="text-gray-600">{formatAssetClass(position.asset_class)}</div>
+      </td>
+      <td className="py-4 px-4">
+        <div className={`${isShort ? 'text-red-600' : 'text-gray-900'}`}>
+          {formatQuantity(position.qty, position.side)}
         </div>
-        <div className="text-right">
-          <p className="text-lg font-medium">
-            ${displayPrice}
-          </p>
-          <p className={`text-sm ${changeColor}`}>
-            {isPositive ? '+' : ''}{changeValue.toFixed(2)} ({changePercentage.toFixed(2)}%)
-          </p>
+      </td>
+      <td className="py-4 px-4">
+        <div className="text-gray-900">{formatCurrency(position.market_value)}</div>
+      </td>
+      <td className="py-4 px-4">
+        <div className="text-gray-900">{formatCurrency(position.current_price)}</div>
+      </td>
+      <td className="py-4 px-4">
+        <div className={`${parseFloat(position.unrealized_pl) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {formatCurrency(position.unrealized_pl)}
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-        <div>Total market value</div>
-        <div className="text-right">${formatPrice(marketValue)}</div>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 };
 
@@ -70,20 +67,46 @@ interface PositionsProps {
 
 export const Positions: React.FC<PositionsProps> = ({ positions }) => {
   return (
-    <section className="mb-8">
+    <div className="mb-8">
       <h2 className="text-xl font-medium text-gray-700 mb-4">Positions</h2>
-      <div className="space-y-4">
-        {positions.length > 0 ? (
-          positions.map((position) => (
-            <PositionCard key={position.symbol} position={position} />
-          ))
-        ) : (
-          <div className="text-center text-gray-500 py-4">
-            No positions to display
-          </div>
-        )}
-      </div>
-    </section>
+      {positions.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Symbol
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Asset Class
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Quantity
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Market Value
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Current Price
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Unrealized P&L
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {positions.map((position) => (
+                <PositionRow key={position.asset_id} position={position} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center text-gray-500 py-4">
+          No positions to display
+        </div>
+      )}
+    </div>
   );
 };
 

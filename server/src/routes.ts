@@ -21,13 +21,8 @@ export const setupRoutes = (app: Express) => {
     app.get('/api/positions', async (_req: Request, res: Response) => {
         try {
             const positions = await alpaca.getPositions();
-            const transformedPositions = (positions as Position[]).map(position => ({
-                symbol: position.symbol,
-                quantity: position.qty,
-                marketValue: position.market_value,
-                currentPrice: position.current_price
-            }));
-            res.json(transformedPositions);
+            // Return the full position data without transformation
+            res.json(positions as Position[]);
         } catch (error: any) {
             console.error('Error fetching positions:', error);
             res.status(500).json({ error: `Failed to fetch positions: ${error?.message || 'Unknown error'}` });
@@ -52,7 +47,6 @@ export const setupRoutes = (app: Express) => {
     // Create order
     app.post('/api/orders/create', async (req: Request, res: Response) => {
         const { symbol, side, quantityType, quantity, orderType, limitPrice, extendedHours } = req.body;
-
 
         try {
             const order = await alpaca.createOrder({
@@ -140,7 +134,6 @@ export const setupRoutes = (app: Express) => {
                 timeframe,
                 intraday_reporting
             });
-            //console.log('Portfolio history response:', history);
             res.json(history);
         } catch (error: any) {
             console.error('Error fetching portfolio history:', error);

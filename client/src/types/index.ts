@@ -1,8 +1,22 @@
 export interface Position {
+  asset_id: string;
   symbol: string;
-  quantity: number;
-  marketValue: number;
-  currentPrice: number;
+  exchange: string;
+  asset_class: string;
+  asset_marginable: boolean;
+  qty: string;
+  avg_entry_price: string;
+  side: 'long' | 'short';
+  market_value: string;
+  cost_basis: string;
+  unrealized_pl: string;
+  unrealized_plpc: string;
+  unrealized_intraday_pl: string;
+  unrealized_intraday_plpc: string;
+  current_price: string;
+  lastday_price: string;
+  change_today: string;
+  qty_available: string;
 }
 
 export interface AccountInfo {
@@ -10,7 +24,7 @@ export interface AccountInfo {
   account_number: string;
   cash: string;
   buying_power: string;
-  equity: string; // Added equity property
+  equity: string;
 }
 
 export interface Order {
