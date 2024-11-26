@@ -13,25 +13,26 @@ export const setupRoutes = (app: Express) => {
         if (!account.alpacaApiKey || !account.alpacaApiSecret) {
             throw new Error('Invalid account credentials: API key and secret are required');
         }
-        if (!process.env.ALPACA_ACCOUNT_TYPE) {
-            throw new Error('ALPACA_ACCOUNT_TYPE environment variable is not set');
+        if (!account.type) {
+            throw new Error('Account type is not specified in the sheet');
         }
-        if (!['paper', 'live'].includes(process.env.ALPACA_ACCOUNT_TYPE)) {
-            throw new Error('ALPACA_ACCOUNT_TYPE must be either "paper" or "live"');
+        if (!['paper', 'live'].includes(account.type.toLowerCase())) {
+            throw new Error('Account type must be either "paper" or "live"');
         }
     };
 
     const initializeAlpacaClient = async (account: SheetAccount): Promise<void> => {
         try {
             console.log(`Initializing Alpaca client for account: ${account.display_name}`);
-            console.log(`Account type: ${process.env.ALPACA_ACCOUNT_TYPE}`);
+            console.log(`Account type from sheet: ${account.type}`);
             
             validateCredentials(account);
             
             currentAccount = account;
             alpaca = new AlpacaClient({
                 keyId: account.alpacaApiKey,
-                secretKey: account.alpacaApiSecret
+                secretKey: account.alpacaApiSecret,
+                isPaper: account.type.toLowerCase() === 'paper'
             });
 
             // Verify the client works by making a test call

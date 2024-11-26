@@ -5,6 +5,7 @@ interface AlpacaClientConfig {
     secretKey: string;
     dataKeyId?: string;
     dataSecretKey?: string;
+    isPaper?: boolean;  // Add this to support paper/live setting from config
 }
 
 interface Bar {
@@ -28,8 +29,9 @@ export class AlpacaClient {
     private dataHeaders: HeadersInit;
 
     constructor(config: AlpacaClientConfig) {
-        const isPaperAccount = process.env.ALPACA_ACCOUNT_TYPE === 'paper';
-        this.accountBaseUrl = isPaperAccount 
+        // Use isPaper from config instead of environment variable
+        const isPaper = config.isPaper ?? false;
+        this.accountBaseUrl = isPaper 
             ? 'https://paper-api.alpaca.markets'
             : 'https://api.alpaca.markets';
         this.dataBaseUrl = 'https://data.alpaca.markets';
@@ -245,16 +247,3 @@ export class AlpacaClient {
         return this.fetch(`/v2/stocks/bars/latest?${queryParams}`, {}, true);
     }
 }
-
-export const createAlpacaClient = () => {
-    if (!process.env.ALPACA_API_KEY || !process.env.ALPACA_SECRET_KEY) {
-        throw new Error('Alpaca API credentials not found in environment variables');
-    }
-
-    return new AlpacaClient({
-        keyId: process.env.ALPACA_API_KEY,
-        secretKey: process.env.ALPACA_SECRET_KEY,
-        dataKeyId: process.env.ALPACA_DATA_API_KEY,
-        dataSecretKey: process.env.ALPACA_DATA_SECRET_KEY
-    });
-};
