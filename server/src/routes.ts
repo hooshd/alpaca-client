@@ -1,10 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { AlpacaClient } from './alpacaClient';
 import { fetchLastTrade } from './polygonClient';
-import { AlpacaClient } from './alpacaClient';
-import { fetchLastTrade } from './polygonClient';
 import { Order, Position, Asset, AccountInfo } from './types';
-import { getAccounts, SheetAccount } from './sheetsClient';
 import { getAccounts, SheetAccount } from './sheetsClient';
 
 export const setupRoutes = (app: Express) => {
