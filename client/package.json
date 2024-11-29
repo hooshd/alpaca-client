@@ -5,6 +5,7 @@
   "dependencies": {
     "@alpacahq/alpaca-trade-api": "^3.1.2",
     "@tailwindcss/forms": "^0.5.9",
+    "adaptic-utils": "^0.0.42",
     "dotenv": "^16.4.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
