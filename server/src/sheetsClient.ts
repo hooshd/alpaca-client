@@ -86,22 +86,22 @@ export async function getAccounts(): Promise<SheetAccount[]> {
     const auth = await getAuthClient();
     const sheets = google.sheets({ version: 'v4', auth });
     
-    // Fetch data from sheet
+    // Fetch data from sheet with cache-busting timestamp
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEET_NAME}!A2:I`,
+      // Add quotaUser parameter with timestamp to prevent caching
+      quotaUser: `user-${Date.now()}`
     });
 
-    const rows = response.data.values;
-    
-    if (!rows || rows.length === 0) {
+    if (!response.data.values || response.data.values.length === 0) {
       const error = new Error('No data found in sheet');
       console.error(error.message);
       throw error;
     }
 
     // Map row data to SheetAccount interface
-    return rows.map((row) => ({
+    return response.data.values.map((row: string[]) => ({
       display_name: row[0] || '',
       name: row[1] || '',
       type: row[2] || '',
