@@ -74,18 +74,52 @@ export const setupRoutes = (app: Express) => {
         }
     };
 
-    // Get available accounts from Google Sheets
-    app.get('/api/accounts', async (_req: Request, res: Response) => {
+    // Refresh config from Google Sheets
+    app.post('/api/config/refresh', async (_req: Request, res: Response) => {
         try {
-            console.log('Fetching accounts from Google Sheet...');
+            console.log('Refreshing config from Google Sheet...');
             const accounts = await getAccounts();
             console.log(`Found ${accounts.length} accounts`);
             
-            if (accounts.length > 0 && !isInitialized) {
-                console.log('Attempting to initialize with first account...');
+            // If we have a current account, find its updated version
+            if (currentAccount) {
+                const updatedAccount = accounts.find(acc => acc.name === currentAccount?.name);
+                if (updatedAccount) {
+                    await initializeAlpacaClient(updatedAccount);
+                }
+            }
+            // If no current account but accounts exist, initialize with first one
+            else if (accounts.length > 0 && !isInitialized) {
                 await initializeAlpacaClient(accounts[0]);
             }
-            res.json(accounts);
+            
+            res.json({ 
+                message: 'Config refreshed successfully',
+                accounts 
+            });
+        } catch (error: any) {
+            console.error('Error refreshing config:', error);
+            res.status(500).json({ 
+                error: `Failed to refresh config: ${error?.message || 'Unknown error'}`,
+                needsInitialization: !isInitialized
+            });
+        }
+    });
+
+    // Get available accounts from Google Sheets
+    app.get('/api/accounts', async (_req: Request, res: Response) => {
+        try {
+            // Use the refresh endpoint internally
+            const response = await fetch(`http://localhost:${process.env.PORT || 3001}/api/config/refresh`, {
+                method: 'POST'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to refresh config');
+            }
+            
+            const data = await response.json();
+            res.json(data.accounts);
         } catch (error: any) {
             console.error('Error fetching accounts:', error);
             res.status(500).json({ 
