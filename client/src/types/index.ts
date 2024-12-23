@@ -42,6 +42,7 @@ export interface SheetAccount {
 
 export interface Order {
   id: string;
+  client_order_id?: string;
   symbol: string;
   asset_class: string;
   qty?: string;
