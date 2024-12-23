@@ -236,7 +236,7 @@ export const setupRoutes = (app: Express) => {
                 side,
                 type: orderType,
                 time_in_force: 'day',
-                client_order_id: 'glitch',
+                client_order_id: `glitch-${Math.random().toString(36).substring(2, 9)}`,
                 limit_price: orderType === 'limit' ? limitPrice : undefined,
                 extended_hours: extendedHours
             });
