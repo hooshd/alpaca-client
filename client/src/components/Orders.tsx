@@ -65,7 +65,12 @@ export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefresh
           <div>
             <span className="font-semibold">{order.symbol}</span>
             <span className="ml-2 text-sm text-gray-600">
-              {order.side.toUpperCase()} {quantityDisplay} at {order.type === 'market' ? 'market price' : `limit price of ${formatCurrency(order.limit_price?.toString())}`}
+              {order.side.toUpperCase()} {quantityDisplay} {' '}
+              {order.type === 'trailing_stop' 
+                ? `at trailing stop (${order.trail_percent ? `${order.trail_percent}%` : `$${order.trail_price}`}${order.hwm ? `, HWM: $${order.hwm}` : ''})`
+                : order.type === 'market' 
+                  ? 'at market price' 
+                  : `at limit price of ${formatCurrency(order.limit_price?.toString())}`}
             </span>
           </div>
           {isOpen && (

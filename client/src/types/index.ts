@@ -56,4 +56,7 @@ export interface Order {
   extended_hours: boolean;
   created_at: string;
   limit_price?: number;
+  trail_price?: string;
+  trail_percent?: string;
+  hwm?: string;
 }
