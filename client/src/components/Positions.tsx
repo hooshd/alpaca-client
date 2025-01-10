@@ -46,7 +46,11 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, onClose }) => {
       </td>
       <td className="py-4 px-4">
         <div className={`${parseFloat(position.unrealized_pl) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {formatCurrency(position.unrealized_pl)}
+          {formatCurrency(position.unrealized_pl)}{' '}
+          <span>
+            ({parseFloat(position.unrealized_plpc) >= 0 ? '+' : ''}
+            {(parseFloat(position.unrealized_plpc) * 100).toFixed(1)}%)
+          </span>
         </div>
       </td>
       <td className="py-4 px-4">
