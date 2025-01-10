@@ -312,7 +312,6 @@ export const setupRoutes = (app: Express) => {
         
         try {
             if (!alpaca) throw new Error('Alpaca client not initialized');
-            console.log('Fetching portfolio history with params:', { period, timeframe, intraday_reporting });
             const history = await alpaca.getAccountPortfolioHistory({
                 period,
                 timeframe,

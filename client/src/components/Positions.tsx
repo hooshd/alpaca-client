@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Position } from '../types';
+import { Position, Order } from '../types';
 import { MarketHoursCalculator } from '../utils/marketTime';
 import { formatCurrency } from '../utils/formatting';
 
@@ -19,16 +19,99 @@ const formatQuantity = (qty: string, side: 'long' | 'short'): string => {
 
 interface PositionRowProps {
   position: Position;
+  orders?: Order[];
   onClose: (position: Position) => void;
 }
 
-const PositionRow: React.FC<PositionRowProps> = ({ position, onClose }) => {
+const PositionRow: React.FC<PositionRowProps> = ({ position, orders = [], onClose }) => {
   const isShort = position.side === 'short';
+  const activeOrderStatuses = [
+    'new',
+    'partially_filled',
+    'accepted',
+    'pending_new',
+    'accepted_for_bidding',
+    'calculated',
+    'stopped'
+  ];
+
+  const linkedOrder = orders?.find(order => {
+    const isMatched = order.symbol === position.symbol && 
+      activeOrderStatuses.includes(order.status.toLowerCase());
+    
+    console.log(`Checking order for ${position.symbol}:`, {
+      orderSymbol: order.symbol,
+      orderStatus: order.status,
+      isMatched,
+      order
+    });
+    
+    return isMatched;
+  });
+
+  const calculateTrailPrice = (order: Order) => {
+    if (order.type !== 'trailing_stop' || !order.hwm) {
+      console.log('Cannot calculate trail price:', {
+        type: order.type,
+        hwm: order.hwm,
+        trailPrice: order.trail_price,
+        trailPercent: order.trail_percent
+      });
+      return null;
+    }
+
+    const hwm = parseFloat(order.hwm);
+    
+    if (order.trail_percent) {
+      const trailPercent = parseFloat(order.trail_percent);
+      const trailPrice = (hwm * (1 - trailPercent / 100)).toFixed(2);
+      console.log('Calculated trail price from percent:', {
+        hwm,
+        trailPercent,
+        trailPrice
+      });
+      return trailPrice;
+    }
+    
+    if (order.trail_price) {
+      const trailPrice = (hwm - parseFloat(order.trail_price)).toFixed(2);
+      console.log('Calculated trail price from trail price:', {
+        hwm,
+        trailPrice: order.trail_price,
+        calculatedPrice: trailPrice
+      });
+      return trailPrice;
+    }
+
+    return null;
+  };
+
+  const orderSummary = linkedOrder ? (() => {
+    console.log('Creating summary for linked order:', linkedOrder);
+    if (linkedOrder.type === 'trailing_stop') {
+      const trailPrice = calculateTrailPrice(linkedOrder);
+      if (linkedOrder.trail_percent) {
+        return `Linked order: Trailing stop ${linkedOrder.side.toUpperCase()}, trail percent: ${linkedOrder.trail_percent}%, at $${trailPrice}`;
+      } else if (linkedOrder.trail_price) {
+        return `Linked order: Trailing stop ${linkedOrder.side.toUpperCase()}, trail amount: $${linkedOrder.trail_price}, at $${trailPrice}`;
+      }
+    } else if (linkedOrder.type === 'limit') {
+      return `Linked order: Limit ${linkedOrder.side.toUpperCase()} at ${formatCurrency(linkedOrder.limit_price?.toString())}`;
+    } else if (linkedOrder.type === 'stop' || linkedOrder.type === 'stop_limit') {
+      return `Linked order: ${linkedOrder.type === 'stop' ? 'Stop' : 'Stop limit'} ${linkedOrder.side.toUpperCase()} at ${formatCurrency(linkedOrder.stop_price?.toString())}`;
+    }
+    return `Linked order: ${linkedOrder.type.toUpperCase()} ${linkedOrder.side.toUpperCase()}`;
+  })() : null;
+
+  console.log(`Position ${position.symbol} summary:`, { linkedOrder, orderSummary });
 
   return (
     <tr className="border-b border-gray-200 hover:bg-gray-50">
       <td className="py-4 px-4">
         <div className="font-medium text-gray-900">{position.symbol}</div>
+        {orderSummary && (
+          <div className="text-sm text-gray-600 italic mt-1">{orderSummary}</div>
+        )}
       </td>
       <td className="py-4 px-4">
         <div className="text-gray-600">{formatAssetClass(position.asset_class)}</div>
@@ -67,10 +150,11 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, onClose }) => {
 
 interface PositionsProps {
   positions: Position[];
+  orders?: Order[];
   onRefreshPositions: () => Promise<void>;
 }
 
-export const Positions: React.FC<PositionsProps> = ({ positions, onRefreshPositions }) => {
+export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], onRefreshPositions }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCloseAllModalOpen, setIsCloseAllModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
@@ -150,7 +234,7 @@ export const Positions: React.FC<PositionsProps> = ({ positions, onRefreshPositi
             quantity: orderQty,
             side: orderSide,
             orderType: 'limit',
-            limitPrice: selectedPosition.current_price,
+            limitPrice: selectedPosition.current_price.toString(),
             extendedHours: true
           }),
         });
@@ -278,7 +362,12 @@ export const Positions: React.FC<PositionsProps> = ({ positions, onRefreshPositi
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {positions.map((position) => (
-                <PositionRow key={position.asset_id} position={position} onClose={handleClosePosition} />
+                <PositionRow 
+                  key={position.asset_id} 
+                  position={position} 
+                  orders={orders}
+                  onClose={handleClosePosition}
+                />
               ))}
             </tbody>
           </table>

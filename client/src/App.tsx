@@ -72,7 +72,8 @@ function App() {
 
         {/* Positions Section */}
         <Positions 
-          positions={positions} 
+          positions={positions}
+          orders={orders}
           onRefreshPositions={refreshData}
         />
 
