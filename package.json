@@ -12,13 +12,14 @@
     "test": "cd client && npm test"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.2"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "@types/recharts": "^1.8.29",
+    "adaptic-utils": "^0.0.118",
     "recharts": "^2.15.0"
   }
 }

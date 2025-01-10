@@ -17,16 +17,17 @@ const openStatuses = [
   'accepted_for_bidding',
   'stopped',
   'calculated',
+  'pending_cancel',
+  'pending_replace',
 ];
 
 const closedStatuses = [
   'canceled',
   'expired',
   'replaced',
-  'pending_cancel',
-  'pending_replace',
   'rejected',
   'suspended',
+  'filled',
 ];
 
 export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefreshOrders }) => {
@@ -64,7 +65,7 @@ export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefresh
           <div>
             <span className="font-semibold">{order.symbol}</span>
             <span className="ml-2 text-sm text-gray-600">
-              {order.side.toUpperCase()} {quantityDisplay} at {order.type === 'market' ?'market price' : `limit price of ${formatCurrency(order.limit_price?.toString())}`}
+              {order.side.toUpperCase()} {quantityDisplay} at {order.type === 'market' ? 'market price' : `limit price of ${formatCurrency(order.limit_price?.toString())}`}
             </span>
           </div>
           {isOpen && (
