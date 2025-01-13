@@ -39,12 +39,12 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, orders = [], onClos
     const isMatched = order.symbol === position.symbol && 
       activeOrderStatuses.includes(order.status.toLowerCase());
     
-    console.log(`Checking order for ${position.symbol}:`, {
-      orderSymbol: order.symbol,
-      orderStatus: order.status,
-      isMatched,
-      order
-    });
+    // console.log(`Checking order for ${position.symbol}:`, {
+    //   orderSymbol: order.symbol,
+    //   orderStatus: order.status,
+    //   isMatched,
+    //   order
+    // });
     
     return isMatched;
   });
@@ -109,9 +109,13 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, orders = [], onClos
     <tr className="border-b border-gray-200 hover:bg-gray-50">
       <td className="py-4 px-4">
         <div className="font-medium text-gray-900">{position.symbol}</div>
-        {orderSummary && (
-          <div className="text-sm text-gray-600 italic mt-1">{orderSummary}</div>
-        )}
+        <div className="text-sm text-gray-600 italic mt-1">
+          {orderSummary ? orderSummary : (
+            <>
+              Linked order: <span className="text-red-600">none</span>
+            </>
+          )}
+        </div>
       </td>
       <td className="py-4 px-4">
         <div className="text-gray-600">{formatAssetClass(position.asset_class)}</div>
@@ -300,7 +304,7 @@ export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], on
 
   useEffect(() => {
     const interval = setInterval(() => {
-      onRefreshPositions();
+      onRefreshPositions().catch(console.error);
     }, 5000);
 
     return () => clearInterval(interval);

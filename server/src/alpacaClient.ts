@@ -129,6 +129,15 @@ export class AlpacaClient {
         await this.fetch(`/v2/orders/${orderId}`, { method: 'DELETE' });
     }
 
+    async patchOrder(orderId: string, params: {
+        trail?: string;
+    }): Promise<Order | undefined> {
+        return this.fetch<Order>(`/v2/orders/${orderId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(params)
+        });
+    }
+
     async getAssets(params: { status: string; tradable: boolean }): Promise<Asset[] | undefined> {
         const queryParams = new URLSearchParams({
             status: params.status,

@@ -251,6 +251,18 @@ export const setupRoutes = (app: Express) => {
         }
     });
 
+    // Patch order
+    app.patch('/api/orders/:orderId', ensureInitialized, async (req: Request, res: Response) => {
+        try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
+            const order = await alpaca.patchOrder(req.params.orderId, req.body);
+            res.json(order as Order);
+        } catch (error: any) {
+            console.error('Error patching order:', error);
+            res.status(500).json({ error: `Failed to patch order: ${error?.message || 'Unknown error'}` });
+        }
+    });
+
     // Cancel order
     app.delete('/api/orders/:orderId/cancel', ensureInitialized, async (req: Request, res: Response) => {
         try {

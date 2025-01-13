@@ -13,6 +13,7 @@ interface AlpacaContextType {
   refreshConfig: () => Promise<void>;
   submitOrder: (orderData: any) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
+  patchOrder: (orderId: string, data: { trail?: string }) => Promise<void>;
   switchAccount: (account: SheetAccount) => Promise<void>;
 }
 
@@ -151,6 +152,24 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
     }
   };
 
+  const patchOrder = async (orderId: string, data: { trail?: string }) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) throw new Error('Failed to patch order');
+      
+      await refreshData();
+    } catch (err) {
+      throw err;
+    }
+  };
+
   const switchAccount = async (account: SheetAccount) => {
     try {
       // Refresh config first to ensure we have the latest account data
@@ -206,6 +225,7 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
     refreshConfig,
     submitOrder,
     cancelOrder,
+    patchOrder,
     switchAccount
   };
 

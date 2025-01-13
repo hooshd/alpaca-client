@@ -17,7 +17,8 @@ function App() {
     error,
     refreshData,
     submitOrder,
-    cancelOrder
+    cancelOrder,
+    patchOrder
   } = useAlpaca();
 
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -82,6 +83,7 @@ function App() {
           orders={orders}
           onCancelOrder={cancelOrder}
           onRefreshOrders={refreshData}
+          onPatchOrder={patchOrder}
         />
       </div>
     </div>

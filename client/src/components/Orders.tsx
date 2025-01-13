@@ -6,6 +6,7 @@ interface OrdersProps {
   orders: Order[];
   onCancelOrder: (orderId: string) => Promise<void>;
   onRefreshOrders: () => Promise<void>;
+  onPatchOrder?: (orderId: string, data: { trail?: string }) => Promise<void>;
 }
 
 const openStatuses = [
@@ -30,7 +31,7 @@ const closedStatuses = [
   'filled',
 ];
 
-export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefreshOrders }) => {
+export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefreshOrders, onPatchOrder }) => {
   const [showOpen, setShowOpen] = useState(true);
   const [showClosed, setShowClosed] = useState(true);
 
@@ -73,11 +74,25 @@ export const Orders: React.FC<OrdersProps> = ({ orders, onCancelOrder, onRefresh
                   : `at limit price of ${formatCurrency(order.limit_price?.toString())}`}
             </span>
           </div>
-          {isOpen && (
-            <button onClick={() => onCancelOrder(order.id)} className="text-red-600 hover:text-red-800 text-sm">
-              Cancel
-            </button>
-          )}
+          <div className="flex gap-2">
+            {isOpen && order.type === 'trailing_stop' && order.trail_percent && onPatchOrder && (
+              <button 
+                onClick={() => {
+                  const currentTrail = parseFloat(order.trail_percent!);
+                  const newTrail = Math.max(0.1, currentTrail - 0.5).toFixed(1);
+                  onPatchOrder(order.id, { trail: newTrail });
+                }} 
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                Trim Trail 0.5%
+              </button>
+            )}
+            {isOpen && (
+              <button onClick={() => onCancelOrder(order.id)} className="text-red-600 hover:text-red-800 text-sm">
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
           <div>Status: {order.status.replace(/_/g, ' ').toUpperCase()}</div>
