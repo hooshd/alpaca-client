@@ -5,7 +5,7 @@ import BalanceSection from './components/BalanceSection';
 import MarketTime from './components/MarketTime';
 import CreateOrder from './components/CreateOrder';
 import Orders from './components/Orders';
-import Positions from './components/Positions';
+import Trades from './components/Trades';
 import AccountNavChart from './components/AccountNavChart';
 
 function App() {
@@ -71,11 +71,24 @@ function App() {
         {/* Create Order Section */}
         <CreateOrder onOrderSubmit={submitOrder} />
 
-        {/* Positions Section */}
-        <Positions 
+        {/* Trades Section */}
+        <Trades
           positions={positions}
           orders={orders}
-          onRefreshPositions={refreshData}
+          onClose={async (position) => {
+            try {
+              await fetch(`/api/positions/close/${position.symbol}`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                }
+              });
+              refreshData();
+            } catch (error) {
+              console.error('Error closing position:', error);
+            }
+          }}
+          onPatchOrder={patchOrder}
         />
 
         {/* Orders Section */}

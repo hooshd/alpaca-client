@@ -1,0 +1,144 @@
+import React from 'react';
+import { Position, Order } from '../types';
+import { formatCurrency } from '../utils/formatting';
+
+interface TradesProps {
+  positions: Position[];
+  orders: Order[];
+  onClose: (position: Position) => void;
+  onPatchOrder?: (orderId: string, data: { trail?: string }) => Promise<void>;
+}
+
+const activeOrderStatuses = [
+  'new',
+  'partially_filled',
+  'accepted',
+  'pending_new',
+  'accepted_for_bidding',
+  'calculated',
+  'stopped'
+];
+
+const calculateTrailPrice = (order: Order) => {
+  if (order.type !== 'trailing_stop' || !order.hwm) {
+    return null;
+  }
+
+  const hwm = parseFloat(order.hwm);
+  
+  if (order.trail_percent) {
+    const trailPercent = parseFloat(order.trail_percent);
+    const trailPrice = (hwm * (1 - trailPercent / 100)).toFixed(2);
+    return { price: trailPrice, percent: trailPercent };
+  }
+  
+  if (order.trail_price) {
+    const trailPrice = (hwm - parseFloat(order.trail_price)).toFixed(2);
+    const trailPercent = ((parseFloat(order.trail_price) / hwm) * 100).toFixed(1);
+    return { price: trailPrice, percent: parseFloat(trailPercent) };
+  }
+
+  return null;
+};
+
+export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPatchOrder }) => {
+  const getLinkedOrder = (symbol: string) => {
+    return orders?.find(order => 
+      order.symbol === symbol && 
+      activeOrderStatuses.includes(order.status.toLowerCase())
+    );
+  };
+
+  const calculateTargetPL = (position: Position, trailPrice: string) => {
+    const qty = parseFloat(position.qty);
+    const entryPrice = parseFloat(position.avg_entry_price);
+    const trail = parseFloat(trailPrice);
+    return formatCurrency(((trail - entryPrice) * qty).toString());
+  };
+
+  return (
+    <div className="mb-8">
+      <h2 className="text-xl font-medium text-gray-700 mb-4">Trades</h2>
+      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry Price</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Price</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market Value</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unrealised P&L</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HWM</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trail</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target P&L</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {positions.map((position) => {
+              const linkedOrder = getLinkedOrder(position.symbol);
+              const trailInfo = linkedOrder ? calculateTrailPrice(linkedOrder) : null;
+              
+              return (
+                <tr key={position.asset_id} className="hover:bg-gray-50">
+                  <td className="py-4 px-4">{position.symbol}</td>
+                  <td className="py-4 px-4">{position.qty}</td>
+                  <td className="py-4 px-4">{formatCurrency(position.avg_entry_price)}</td>
+                  <td className="py-4 px-4">{formatCurrency(position.current_price)}</td>
+                  <td className="py-4 px-4">{formatCurrency(position.market_value)}</td>
+                  <td className={`py-4 px-4 ${parseFloat(position.unrealized_pl) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(position.unrealized_pl)}{' '}
+                    <span>
+                      ({parseFloat(position.unrealized_plpc) >= 0 ? '+' : ''}
+                      {(parseFloat(position.unrealized_plpc) * 100).toFixed(1)}%)
+                    </span>
+                  </td>
+                  <td className="py-4 px-4">
+                    {linkedOrder?.hwm ? formatCurrency(linkedOrder.hwm) : '-'}
+                  </td>
+                  <td className="py-4 px-4">
+                    {trailInfo ? 
+                      `${trailInfo.percent}% (${formatCurrency(trailInfo.price)})` : 
+                      '-'
+                    }
+                  </td>
+                  <td className="py-4 px-4">
+                    {trailInfo ? 
+                      calculateTargetPL(position, trailInfo.price) :
+                      '-'
+                    }
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex space-x-2">
+                      {linkedOrder && onPatchOrder && (
+                        <button
+                          onClick={() => {
+                            const currentTrail = parseFloat(linkedOrder.trail_percent || '0');
+                            const newTrail = Math.max(0.1, currentTrail - 0.5).toFixed(1);
+                            onPatchOrder(linkedOrder.id, { trail: newTrail });
+                          }}
+                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                        >
+                          Trim Trail 0.5%
+                        </button>
+                      )}
+                      <button
+                        onClick={() => onClose(position)}
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default Trades;
