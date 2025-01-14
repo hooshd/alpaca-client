@@ -12,6 +12,13 @@ const AccountNavChart = () => {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [period, setPeriod] = useState<string>('1M'); // Default period
 
+  // Filter data points to 30-minute intervals for 1D view
+  const filterDataPoints = (data: ChartData[]) => {
+    if (period !== '1D') return data;
+    
+    return data.filter((_, index) => index % 6 === 0); // Every 6th point (30 min intervals)
+  };
+
   useEffect(() => {
     const fetchPortfolioHistory = async () => {
       try {
@@ -20,10 +27,14 @@ const AccountNavChart = () => {
         if (!response.ok) throw new Error('Failed to fetch portfolio history');
         const data = await response.json();
         console.log('Fetched data:', data); // Debugging log
-        const formattedData = data.timestamp.map((time: number, index: number) => ({
+        let formattedData = data.timestamp.map((time: number, index: number) => ({
           time: new Date(time * 1000).toLocaleString('en-US', { timeZone: 'America/New_York' }),
           equity: data.equity[index],
         }));
+        
+        // Apply data filtering for 1D view
+        formattedData = filterDataPoints(formattedData);
+        
         setChartData(formattedData);
       } catch (err) {
         console.error(err);
@@ -51,17 +62,30 @@ const AccountNavChart = () => {
     setPeriod(newPeriod);
   };
 
-  const getMaxValue = () => {
-    return Math.max(...chartData.map(data => data.equity));
+  const calculateYAxisDomain = () => {
+    if (chartData.length === 0) return [0, 100];
+    
+    const values = chartData.map(data => data.equity);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    
+    // Add 10% padding above and below
+    const padding = range * 0.1;
+    let lowerBound = Math.floor((min - padding) / 1000) * 1000;
+    let upperBound = Math.ceil((max + padding) / 1000) * 1000;
+    
+    // Ensure minimum range of 3000 for readability
+    if (upperBound - lowerBound < 3000) {
+      const midPoint = (upperBound + lowerBound) / 2;
+      lowerBound = Math.floor(midPoint - 1500);
+      upperBound = Math.ceil(midPoint + 1500);
+    }
+    
+    return [lowerBound, upperBound];
   };
 
-  const roundUpToSignificant = (value: number) => {
-    const factor = Math.pow(10, Math.floor(Math.log10(value)));
-    return Math.ceil(value / factor) * factor;
-  };
-
-  const maxValue = getMaxValue();
-  const yAxisDomain = [0, roundUpToSignificant(maxValue)];
+  const yAxisDomain = calculateYAxisDomain();
 
   if (error) return <div>Error fetching data: {error}</div>;
 
@@ -70,9 +94,30 @@ const AccountNavChart = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-medium text-gray-700 mb-6">Account NAV Chart</h2>
         <div className="flex space-x-4">
-          <button onClick={() => handlePeriodChange('1D')} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-200">1D</button>
-          <button onClick={() => handlePeriodChange('1W')} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-200">1W</button>
-          <button onClick={() => handlePeriodChange('1M')} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-200">1M</button>
+          <button 
+            onClick={() => handlePeriodChange('1D')} 
+            className={`px-4 py-2 rounded transition duration-200 ${
+              period === '1D' 
+                ? 'bg-blue-700 text-white shadow-inner shadow-blue-900' 
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+          >1D</button>
+          <button 
+            onClick={() => handlePeriodChange('1W')} 
+            className={`px-4 py-2 rounded transition duration-200 ${
+              period === '1W' 
+                ? 'bg-blue-700 text-white shadow-inner shadow-blue-900' 
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+          >1W</button>
+          <button 
+            onClick={() => handlePeriodChange('1M')} 
+            className={`px-4 py-2 rounded transition duration-200 ${
+              period === '1M' 
+                ? 'bg-blue-700 text-white shadow-inner shadow-blue-900' 
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+          >1M</button>
         </div>
       </div>
       <ResponsiveContainer width="100%" height="100%">
@@ -82,18 +127,38 @@ const AccountNavChart = () => {
             dataKey="time" 
             tickFormatter={(timeStr) => {
               const date = new Date(timeStr);
+              if (period === '1D') {
+                return date.toLocaleTimeString('en-US', { 
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true 
+                });
+              }
               return `${date.getDate()}/${date.getMonth() + 1}`; // d/m format
-            }} 
+            }}
+            interval={period === '1D' ? 5 : 'preserveStartEnd'} // Show fewer ticks for 1D view
           />
           <YAxis 
-            hide={true} // Completely hide the Y-axis
-            domain={yAxisDomain} // Set the domain to scale above the max value
+            domain={yAxisDomain}
+            tickFormatter={(value) => formatCurrency(value)}
+            ticks={[yAxisDomain[0], (yAxisDomain[0] + yAxisDomain[1]) / 2, yAxisDomain[1]]}
           />
           <Tooltip 
             contentStyle={{ backgroundColor: '#fff', border: 'none', borderRadius: '8px' }} 
             formatter={(value: number) => [formatCurrency(value, true), 'Equity']} // Show full format on hover
           />
-          <Line type="monotone" dataKey="equity" stroke="#4A90E2" strokeWidth={2} label={{ position: 'top', formatter: (value: number) => formatCurrency(value) }} /> {/* Added label for points */}
+          <Line 
+            type="monotone" 
+            dataKey="equity" 
+            stroke="#4A90E2" 
+            strokeWidth={2} 
+            dot={period === '1D'} // Only show dots in 1D view
+            label={period === '1D' ? { 
+              position: 'top', 
+              formatter: (value: number) => formatCurrency(value),
+              fontSize: 10
+            } : false} 
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>
