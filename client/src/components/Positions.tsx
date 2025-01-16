@@ -160,7 +160,6 @@ interface PositionsProps {
 
 export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], onRefreshPositions }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCloseAllModalOpen, setIsCloseAllModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [totalUnrealizedPL, setTotalUnrealizedPL] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
@@ -188,12 +187,6 @@ export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], on
     setStatusMessage('');
     setErrorMessage('');
     setShowCloseButton(false);
-  };
-
-  const handleCloseAllModal = () => {
-    setIsCloseAllModalOpen(false);
-    setStatusMessage('');
-    setErrorMessage('');
   };
 
   const confirmClosePosition = async () => {
@@ -263,45 +256,6 @@ export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], on
     }
   };
 
-  const confirmCloseAllPositions = async () => {
-    const marketStatus = MarketHoursCalculator.determineMarketStatus();
-    setIsLoading(true);
-    setStatusMessage('');
-    setErrorMessage('');
-
-    try {
-      if (marketStatus.status === 'CLOSED') {
-        setErrorMessage('Cannot close positions — Market is currently closed');
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await fetch('/api/positions', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        setStatusMessage('Successfully closed all positions.');
-        setTimeout(() => {
-          handleCloseAllModal();
-          onRefreshPositions();
-        }, 2000);
-      } else {
-        const errorData = await response.json();
-        setErrorMessage(errorData.error || 'Failed to close all positions.');
-        setShowCloseButton(true); // Show close button on error
-      }
-    } catch (error) {
-      setErrorMessage('An error occurred while closing all positions.');
-      setShowCloseButton(true); // Show close button on error
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
     const interval = setInterval(() => {
       onRefreshPositions().catch(console.error);
@@ -327,14 +281,6 @@ export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], on
     <div className="mb-8">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-medium text-gray-700">Positions</h2>
-        {positions.length > 0 && (
-          <button
-            onClick={() => setIsCloseAllModalOpen(true)}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Close All Positions
-          </button>
-        )}
       </div>
       {positions.length > 0 ? (
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
@@ -421,42 +367,6 @@ export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], on
                       </button>
                     </>
                   )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {isCloseAllModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded shadow-md">
-            <h3 className="text-lg font-medium mb-4">Confirm Closing All Positions?</h3>
-            <p>This will submit orders to close all positions at market price.</p>
-            <p className="mt-2">
-              Total Unrealized P&L: <span className={`font-medium ${totalUnrealizedPL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {totalUnrealizedPL}
-              </span>
-            </p>
-            {isLoading ? (
-              <p>Processing...</p>
-            ) : (
-              <>
-                {statusMessage && <p className="text-green-600">{statusMessage}</p>}
-                {errorMessage && <p className="text-red-600">{errorMessage}</p>}
-                <div className="mt-4">
-                  <button
-                    onClick={confirmCloseAllPositions}
-                    className="mr-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    onClick={handleCloseAllModal}
-                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                  >
-                    Cancel
-                  </button>
                 </div>
               </>
             )}

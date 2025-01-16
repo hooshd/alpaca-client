@@ -1,6 +1,7 @@
 import React from 'react';
 import { Position, Order } from '../types';
 import { formatCurrency } from '../utils/formatting';
+import { useMarket } from '../context/MarketContext';
 
 interface TradesProps {
   positions: Position[];
@@ -42,6 +43,8 @@ const calculateTrailPrice = (order: Order) => {
 };
 
 export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPatchOrder }) => {
+  const { isExtendedHours } = useMarket();
+
   const getLinkedOrder = (symbol: string) => {
     return orders?.find(order => 
       order.symbol === symbol && 
@@ -54,6 +57,46 @@ export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPa
     const entryPrice = parseFloat(position.avg_entry_price);
     const trail = parseFloat(trailPrice);
     return formatCurrency(((trail - entryPrice) * qty).toString());
+  };
+
+  const handleClosePosition = async (position: Position) => {
+    try {
+      if (isExtendedHours) {
+        // For after-hours trading, submit a limit order
+        const currentPrice = parseFloat(position.current_price);
+        const orderSide = position.side === 'long' ? 'sell' : 'buy';
+        const limitPrice = orderSide === 'sell' 
+          ? (currentPrice * 0.99).toFixed(2) // 1% lower for sell orders
+          : (currentPrice * 1.01).toFixed(2); // 1% higher for buy orders
+
+        await fetch('/api/orders/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            symbol: position.symbol,
+            quantityType: 'qty',
+            quantity: Math.abs(parseFloat(position.qty)).toString(),
+            side: orderSide,
+            orderType: 'limit',
+            limitPrice,
+            extendedHours: true
+          }),
+        });
+      } else {
+        // During regular hours, use market orders
+        await fetch(`/api/positions/close/${position.symbol}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+      }
+      onClose(position);
+    } catch (error) {
+      console.error('Error closing position:', error);
+    }
   };
 
   return (
@@ -111,7 +154,7 @@ export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPa
                   </td>
                   <td className="py-4 px-4">
                     <div className="flex space-x-2">
-                      {linkedOrder && onPatchOrder && (
+                      {linkedOrder && onPatchOrder && linkedOrder.type === 'trailing_stop' && (
                         <button
                           onClick={() => {
                             const currentTrail = parseFloat(linkedOrder.trail_percent || '0');
@@ -124,8 +167,8 @@ export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPa
                         </button>
                       )}
                       <button
-                        onClick={() => onClose(position)}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                        onClick={() => handleClosePosition(position)}
+                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors duration-300"
                       >
                         Close
                       </button>
