@@ -148,6 +148,38 @@ export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPa
     }
   };
 
+  const handleCreateTrailingStop = async (position: Position) => {
+    try {
+      const response = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          symbol: position.symbol,
+          qty: position.qty,  
+          side: position.side === 'long' ? 'sell' : 'buy',
+          type: 'trailing_stop',
+          time_in_force: 'gtc',
+          trail_percent: 4.0,  
+          extended_hours: false
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create trailing stop order');
+      }
+
+      // Refresh orders after creating a new one
+      if (onClose) {
+        onClose(position);
+      }
+    } catch (error) {
+      console.error('Error creating trailing stop order:', error);
+    }
+  };
+
   return (
     <div className="mb-8">
       <h2 className="text-xl font-medium text-gray-700 mb-4">Trades</h2>
@@ -238,6 +270,14 @@ export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPa
                           className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                         >
                           Trim Trail 0.5%
+                        </button>
+                      )}
+                      {!linkedOrder && (
+                        <button
+                          onClick={() => handleCreateTrailingStop(position)}
+                          className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                        >
+                          Add T-Stop
                         </button>
                       )}
                       <button

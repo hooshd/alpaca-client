@@ -118,6 +118,7 @@ export class AlpacaClient {
         limit_price?: number;
         extended_hours?: boolean;
         client_order_id?: string;
+        trail_percent?: string;
     }): Promise<Order | undefined> {
         return this.fetch<Order>('/v2/orders', {
             method: 'POST',

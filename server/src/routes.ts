@@ -225,21 +225,17 @@ export const setupRoutes = (app: Express) => {
 
     // Create order
     app.post('/api/orders/create', ensureInitialized, async (req: Request, res: Response) => {
-        const { symbol, side, quantityType, quantity, orderType, limitPrice, extendedHours } = req.body;
-
         try {
             if (!alpaca) throw new Error('Alpaca client not initialized');
-            const order = await alpaca.createOrder({
-                symbol,
-                qty: quantityType === 'qty' ? quantity : undefined,
-                notional: quantityType === 'notional' ? quantity : undefined,
-                side,
-                type: orderType,
-                time_in_force: 'day',
-                client_order_id: `glitch-${Math.random().toString(36).substring(2, 9)}`,
-                limit_price: orderType === 'limit' ? limitPrice : undefined,
-                extended_hours: extendedHours
-            });
+            
+            // Add a client_order_id if not provided
+            const orderParams = {
+                ...req.body,
+                client_order_id: req.body.client_order_id || `glitch-${Math.random().toString(36).substring(2, 9)}`
+            };
+
+            console.log('Creating order with params:', orderParams);
+            const order = await alpaca.createOrder(orderParams);
             res.json(order as Order);
         } catch (error: any) {
             console.error('Error creating order:', error);
