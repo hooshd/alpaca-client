@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { MarketHoursCalculator, getUSEasternTime } from '../utils/marketTime';
+import { MarketHoursCalculator } from '../utils/marketTime';
 
 interface MarketContextType {
   status: string;

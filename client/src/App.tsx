@@ -3,7 +3,7 @@ import { useAlpaca } from './context/AlpacaContext';
 import { MarketProvider } from './context/MarketContext';
 import { MarketHoursCalculator } from './utils/marketTime';
 import AccountInfo from './components/AccountInfo';
-import BalanceSection from './components/BalanceSection';
+import { BalanceSection } from './components/BalanceSection';
 import MarketTime from './components/MarketTime';
 import CreateOrder from './components/CreateOrder';
 import Orders from './components/Orders';
@@ -15,7 +15,6 @@ function App() {
     accountInfo,
     orders,
     positions,
-    isLoading,
     error,
     refreshData,
     submitOrder,
@@ -60,11 +59,7 @@ function App() {
 
           {/* Balance and Market Time Sections */}
           <div className="grid sm:grid-cols-2 gap-8 mb-8">
-            <BalanceSection
-              accountInfo={accountInfo}
-              isLoading={isLoading}
-              equity={accountInfo?.equity || '0'}
-            />
+            <BalanceSection accountInfo={accountInfo} />
             <MarketTime lastUpdated={lastUpdated} />
           </div>
 
