@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Position, Order } from '../types';
 import { formatCurrency } from '../utils/formatting';
 import { useMarket } from '../context/MarketContext';
@@ -9,6 +9,9 @@ interface TradesProps {
   onClose: (position: Position) => void;
   onPatchOrder?: (orderId: string, data: { trail?: string }) => Promise<void>;
 }
+
+type SortField = 'symbol' | 'marketValue' | 'unrealizedPL' | 'trail' | 'targetPL';
+type SortDirection = 'asc' | 'desc';
 
 const activeOrderStatuses = [
   'new',
@@ -44,6 +47,8 @@ const calculateTrailPrice = (order: Order) => {
 
 export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPatchOrder }) => {
   const { isExtendedHours } = useMarket();
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const getLinkedOrder = (symbol: string) => {
     return orders?.find(order => 
@@ -57,6 +62,50 @@ export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPa
     const entryPrice = parseFloat(position.avg_entry_price);
     const trail = parseFloat(trailPrice);
     return formatCurrency(((trail - entryPrice) * qty).toString());
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedPositions = () => {
+    if (!sortField) return positions;
+
+    return [...positions].sort((a, b) => {
+      const direction = sortDirection === 'asc' ? 1 : -1;
+
+      switch (sortField) {
+        case 'symbol':
+          return direction * a.symbol.localeCompare(b.symbol);
+        case 'marketValue':
+          return direction * (parseFloat(a.market_value) - parseFloat(b.market_value));
+        case 'unrealizedPL':
+          return direction * (parseFloat(a.unrealized_plpc) - parseFloat(b.unrealized_plpc));
+        case 'trail': {
+          const orderA = getLinkedOrder(a.symbol);
+          const orderB = getLinkedOrder(b.symbol);
+          const trailA = orderA ? parseFloat(orderA.trail_percent || '0') : 0;
+          const trailB = orderB ? parseFloat(orderB.trail_percent || '0') : 0;
+          return direction * (trailA - trailB);
+        }
+        case 'targetPL': {
+          const orderA = getLinkedOrder(a.symbol);
+          const orderB = getLinkedOrder(b.symbol);
+          const trailInfoA = orderA ? calculateTrailPrice(orderA) : null;
+          const trailInfoB = orderB ? calculateTrailPrice(orderB) : null;
+          const targetPLA = trailInfoA ? parseFloat(calculateTargetPL(a, trailInfoA.price).replace(/[^0-9.-]+/g, '')) : 0;
+          const targetPLB = trailInfoB ? parseFloat(calculateTargetPL(b, trailInfoB.price).replace(/[^0-9.-]+/g, '')) : 0;
+          return direction * (targetPLA - targetPLB);
+        }
+        default:
+          return 0;
+      }
+    });
   };
 
   const handleClosePosition = async (position: Position) => {
@@ -106,20 +155,45 @@ export const Trades: React.FC<TradesProps> = ({ positions, orders, onClose, onPa
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+              <th 
+                className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('symbol')}
+              >
+                Symbol {sortField === 'symbol' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry Price</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Price</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market Value</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unrealised P&L</th>
+              <th 
+                className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('marketValue')}
+              >
+                Market Value {sortField === 'marketValue' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </th>
+              <th 
+                className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('unrealizedPL')}
+              >
+                Unrealised P&L {sortField === 'unrealizedPL' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HWM</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trail</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target P&L</th>
+              <th 
+                className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('trail')}
+              >
+                Trail {sortField === 'trail' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </th>
+              <th 
+                className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('targetPL')}
+              >
+                Target P&L {sortField === 'targetPL' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {positions.map((position) => {
+            {getSortedPositions().map((position) => {
               const linkedOrder = getLinkedOrder(position.symbol);
               const trailInfo = linkedOrder ? calculateTrailPrice(linkedOrder) : null;
               
