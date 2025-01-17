@@ -198,9 +198,17 @@ export const setupRoutes = (app: Express) => {
 
         try {
             if (!alpaca) throw new Error('Alpaca client not initialized');
-            const response = await alpaca.closeAllPositions({ cancel_orders: cancelOrders });
-            console.log('Close positions response:', response);
-            res.status(207).json(response);
+
+            // First get all positions to get their symbols
+            const positions = await alpaca.getPositions();
+            if (positions) {
+                // Cancel all orders
+                await alpaca.cancelAllOrders();
+            }
+
+            // Then close all positions
+            const response = await alpaca.closeAllPositions();
+            res.status(200).json(response);
         } catch (error: any) {
             console.error('Error closing positions:', error);
             res.status(500).json({ error: `Failed to close positions: ${error?.message || 'Unknown error'}` });
@@ -268,6 +276,43 @@ export const setupRoutes = (app: Express) => {
         } catch (error: any) {
             console.error('Error cancelling order:', error);
             res.status(500).json({ error: `Failed to cancel order: ${error?.message || 'Unknown error'}` });
+        }
+    });
+
+    // Cancel all orders
+    app.delete('/api/orders', async (req: Request, res: Response) => {
+        try {
+            if (!alpaca) {
+                throw new Error('Alpaca client not initialized');
+            }
+            await alpaca.cancelAllOrders();
+            res.status(200).json({ message: 'All orders cancelled successfully' });
+        } catch (error: any) {
+            console.error('Error cancelling orders:', error);
+            res.status(500).json({ error: `Failed to cancel orders: ${error?.message || 'Unknown error'}` });
+        }
+    });
+
+    app.post('/api/orders', async (req: Request, res: Response) => {
+        try {
+            if (!alpaca) throw new Error('Alpaca client not initialized');
+            
+            // Add a client_order_id if not provided
+            const orderParams = {
+                ...req.body,
+                client_order_id: req.body.client_order_id || `glitch-${Math.random().toString(36).substring(2, 9)}`
+            };
+
+            console.log('Creating order with params:', orderParams);
+            const order = await alpaca.createOrder(orderParams);
+            res.json(order as Order);
+        } catch (error: any) {
+            console.error('Error creating order:', error);
+            if (error.response) {
+                res.status(error.response.status).json({ error: error.response.data });
+            } else {
+                res.status(500).json({ error: `Failed to create order: ${error?.message || 'Unknown error'}` });
+            }
         }
     });
 

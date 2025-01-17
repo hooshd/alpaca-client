@@ -130,6 +130,10 @@ export class AlpacaClient {
         await this.fetch(`/v2/orders/${orderId}`, { method: 'DELETE' });
     }
 
+    async cancelAllOrders(): Promise<void> {
+        await this.fetch('/v2/orders', { method: 'DELETE' });
+    }
+
     async patchOrder(orderId: string, params: {
         trail?: string;
     }): Promise<Order | undefined> {

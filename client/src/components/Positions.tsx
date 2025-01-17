@@ -199,6 +199,50 @@ export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], on
     setShowCloseButton(false);
 
     try {
+      // First check if there are any active orders for this symbol
+      const activeOrders = orders.filter(order => 
+        order.symbol === selectedPosition.symbol && 
+        ['new', 'partially_filled', 'accepted', 'pending_new', 'accepted_for_bidding', 'calculated', 'stopped'].includes(order.status.toLowerCase())
+      );
+
+      // If there are active orders, cancel them first
+      if (activeOrders.length > 0) {
+        setStatusMessage(`Cancelling ${activeOrders.length} existing orders...`);
+        
+        // Cancel each order individually using the same endpoint as Orders component
+        for (const order of activeOrders) {
+          const cancelResponse = await fetch(`/api/orders/${order.id}/cancel`, {
+            method: 'DELETE'
+          });
+
+          if (!cancelResponse.ok) {
+            const errorData = await cancelResponse.json();
+            throw new Error(errorData.error || 'Failed to cancel existing orders');
+          }
+        }
+
+        // Wait a moment for the cancellations to take effect
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Verify orders are cancelled
+        const ordersResponse = await fetch('/api/orders');
+        if (!ordersResponse.ok) {
+          throw new Error('Failed to check order status');
+        }
+        
+        const currentOrders = await ordersResponse.json();
+        const remainingOrders = currentOrders.filter((order: Order) => 
+          order.symbol === selectedPosition.symbol && 
+          ['new', 'partially_filled', 'accepted', 'pending_new', 'accepted_for_bidding', 'calculated', 'stopped'].includes(order.status.toLowerCase())
+        );
+
+        if (remainingOrders.length > 0) {
+          throw new Error('Failed to cancel all orders');
+        }
+
+        setStatusMessage('Orders cancelled, preparing to close position...');
+      }
+      
       let response;
       
       if (marketStatus.status === 'CLOSED') {
@@ -208,6 +252,7 @@ export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], on
       }
 
       if (marketStatus.status === 'OPEN') {
+        setStatusMessage('Closing position...');
         response = await fetch(`/api/positions/close/${selectedPosition.symbol}`, {
           method: 'DELETE',
           headers: {
@@ -220,6 +265,7 @@ export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], on
         const orderSide = selectedPosition.side === 'long' ? 'sell' : 'buy';
         const orderQty = Math.abs(parseFloat(selectedPosition.qty)).toString();
 
+        setStatusMessage('Submitting limit order to close position...');
         response = await fetch('/api/orders/create', {
           method: 'POST',
           headers: {
@@ -238,6 +284,7 @@ export const Positions: React.FC<PositionsProps> = ({ positions, orders = [], on
       }
 
       if (response && response.ok) {
+        await onRefreshPositions(); // Refresh positions after successful close
         setStatusMessage('Successfully closed the position.');
         setShowCloseButton(true);
         setTimeout(() => {
