@@ -376,4 +376,16 @@ export const setupRoutes = (app: Express) => {
             res.status(500).json({ error: `Failed to fetch portfolio history: ${error?.message || 'Unknown error'}` });
         }
     });
+
+    // Chat endpoint
+    app.post('/api/chat', async (req: Request, res: Response) => {
+        try {
+            const { message } = req.body;
+            // For now, just return a dummy response
+            res.json({ response: "dummy response" });
+        } catch (error) {
+            console.error('Error in chat endpoint:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    });
 };

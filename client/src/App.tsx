@@ -9,18 +9,10 @@ import CreateOrder from './components/CreateOrder';
 import Orders from './components/Orders';
 import Trades from './components/Trades';
 import AccountNavChart from './components/AccountNavChart';
+import Chat from './components/Chat';
 
 function App() {
-  const {
-    accountInfo,
-    orders,
-    positions,
-    error,
-    refreshData,
-    submitOrder,
-    cancelOrder,
-    patchOrder
-  } = useAlpaca();
+  const { accountInfo, orders, positions, error, refreshData, submitOrder, cancelOrder, patchOrder } = useAlpaca();
 
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
@@ -50,9 +42,7 @@ function App() {
     <MarketProvider>
       <div className="bg-gray-50 min-h-screen flex flex-col items-center p-6 font-inter">
         <div className="w-full max-w-[calc(100%-10px)] bg-white shadow-lg rounded-xl p-8">
-          <h1 className="text-3xl font-semibold mb-8 text-center text-gray-800">
-            The Money Glitch
-          </h1>
+          <h1 className="text-3xl font-semibold mb-8 text-center text-gray-800">The Money Glitch</h1>
 
           {/* Account Info */}
           <AccountInfo />
@@ -66,6 +56,9 @@ function App() {
           {/* Account NAV Chart Section */}
           <AccountNavChart />
 
+          {/* Chat Section */}
+          <Chat />
+
           {/* Create Order Section */}
           <CreateOrder onOrderSubmit={submitOrder} />
 
@@ -75,32 +68,35 @@ function App() {
               onClick={async () => {
                 try {
                   const marketStatus = MarketHoursCalculator.determineMarketStatus();
-                  
+
                   if (marketStatus.status === 'EXTENDED HOURS') {
                     // For after-hours trading, submit limit orders for each position
-                    await Promise.all(positions.map(async (position) => {
-                      const currentPrice = parseFloat(position.current_price);
-                      const orderSide = position.side === 'long' ? 'sell' : 'buy';
-                      const limitPrice = orderSide === 'sell'
-                        ? (currentPrice * 0.99).toFixed(2) // 1% lower for sell orders
-                        : (currentPrice * 1.01).toFixed(2); // 1% higher for buy orders
+                    await Promise.all(
+                      positions.map(async (position) => {
+                        const currentPrice = parseFloat(position.current_price);
+                        const orderSide = position.side === 'long' ? 'sell' : 'buy';
+                        const limitPrice =
+                          orderSide === 'sell'
+                            ? (currentPrice * 0.99).toFixed(2) // 1% lower for sell orders
+                            : (currentPrice * 1.01).toFixed(2); // 1% higher for buy orders
 
-                      return fetch('/api/orders/create', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                          symbol: position.symbol,
-                          quantityType: 'qty',
-                          quantity: Math.abs(parseFloat(position.qty)).toString(),
-                          side: orderSide,
-                          orderType: 'limit',
-                          limitPrice,
-                          extendedHours: true
-                        }),
-                      });
-                    }));
+                        return fetch('/api/orders/create', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            symbol: position.symbol,
+                            quantityType: 'qty',
+                            quantity: Math.abs(parseFloat(position.qty)).toString(),
+                            side: orderSide,
+                            orderType: 'limit',
+                            limitPrice,
+                            extendedHours: true,
+                          }),
+                        });
+                      })
+                    );
                   } else {
                     // During regular hours, use the standard close all endpoint
                     await fetch('/api/positions', {
@@ -131,7 +127,7 @@ function App() {
                   method: 'DELETE',
                   headers: {
                     'Content-Type': 'application/json',
-                  }
+                  },
                 });
                 refreshData();
               } catch (error) {
@@ -142,12 +138,7 @@ function App() {
           />
 
           {/* Orders Section */}
-          <Orders
-            orders={orders}
-            onCancelOrder={cancelOrder}
-            onRefreshOrders={refreshData}
-            onPatchOrder={patchOrder}
-          />
+          <Orders orders={orders} onCancelOrder={cancelOrder} onRefreshOrders={refreshData} onPatchOrder={patchOrder} />
         </div>
       </div>
     </MarketProvider>
