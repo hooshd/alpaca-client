@@ -1,5 +1,4 @@
 import { AccountInfo, Position, Order, Asset } from './types';
-import { adaptic as adptc } from 'adaptic-utils';
 
 interface AlpacaClientConfig {
   keyId: string;

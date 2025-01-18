@@ -62,6 +62,7 @@ const Chat: React.FC = () => {
 
   const handleReset = async () => {
     try {
+      setIsLoading(true);
       const response = await fetch('/api/chat/reset', {
         method: 'POST',
         headers: {
@@ -77,6 +78,8 @@ const Chat: React.FC = () => {
       console.log('Chat history reset successfully');
     } catch (error) {
       console.error('Error resetting chat:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
