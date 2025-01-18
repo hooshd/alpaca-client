@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@types/recharts": "^1.8.29",
-    "adaptic-utils": "^0.0.147",
+    "adaptic-utils": "^0.0.149",
     "recharts": "^2.15.0"
   }
 }

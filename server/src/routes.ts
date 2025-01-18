@@ -4,6 +4,7 @@ import { fetchLastTrade } from './polygonClient';
 import { Order, Position, Asset, AccountInfo } from './types';
 import { getAccounts, SheetAccount } from './sheetsClient';
 import { lumic } from 'lumic-utility-functions';
+import { ChatService } from './chatClient';
 
 export const setupRoutes = (app: Express) => {
   let currentAccount: SheetAccount | null = null;
@@ -151,6 +152,7 @@ export const setupRoutes = (app: Express) => {
       '/api/ticker-suggestions',
       '/api/latest-price',
       '/api/account/portfolio/history',
+      '/api/chat',
     ],
     ensureInitialized
   );
@@ -385,14 +387,21 @@ export const setupRoutes = (app: Express) => {
   });
 
   // Chat endpoint
-  app.post('/api/chat', async (req: Request, res: Response) => {
+  app.post('/api/chat', ensureInitialized, async (req: Request, res: Response) => {
     try {
+      if (!alpaca) throw new Error('Alpaca client not initialized');
+      
       const { message } = req.body;
-      // For now, just return a dummy response
-      res.json({ response: 'dummy response' });
-    } catch (error) {
+      if (!message) {
+        throw new Error('Message is required');
+      }
+
+      const chatService = new ChatService(alpaca);
+      const response = await chatService.processMessage(message);
+      res.json(response);
+    } catch (error: any) {
       console.error('Error in chat endpoint:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: error?.message || 'Internal server error' });
     }
   });
 };

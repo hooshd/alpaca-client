@@ -91,3 +91,29 @@ export interface AccountInfo {
     daytrading_buying_power: string;
     regt_buying_power: string;
 }
+
+export interface PolygonPriceData {
+    date: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    vol: number;
+    vwap?: number;
+}
+
+export interface PolygonQuote {
+    ticker: string;
+    tks: string;
+    p: number;
+    s: number;
+    c: number[];
+    t: number;
+    q: number;
+}
+
+export interface SimplifiedPriceData {
+    date: string;
+    close: number;
+    vol: number;
+}
