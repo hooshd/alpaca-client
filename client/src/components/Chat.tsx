@@ -3,6 +3,12 @@ import React, { useState } from 'react';
 interface Message {
   text: string;
   isUser: boolean;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    model: string;
+    cost: number;
+  };
 }
 
 const Chat: React.FC = () => {
@@ -35,54 +41,73 @@ const Chat: React.FC = () => {
       }
 
       const data = await response.json();
-
-      // Add server response
-      const serverMessage: Message = {
-        text: data.message || 'No response received',
+      const assistantMessage: Message = {
+        text: data.message,
         isUser: false,
+        usage: data.usage
       };
-      setMessages((prev) => [...prev, serverMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error:', error);
-      // Add error message
       const errorMessage: Message = {
-        text: 'Error: Could not get response from server',
+        text: 'Sorry, there was an error processing your request.',
         isUser: false,
       };
       setMessages((prev) => [...prev, errorMessage]);
     }
   };
 
+  const formatCost = (cost: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 4,
+    }).format(cost);
+  };
+
   return (
-    <div className="mb-8">
-      <h2 className="text-xl font-medium text-gray-700 mb-4">Chat</h2>
-      <div className="flex flex-col h-[400px] bg-gray-100 rounded-lg p-4 mb-4">
-        <div className="flex-1 overflow-y-auto mb-4">
-          {messages.map((message, index) => (
-            <div key={index} className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} mb-2`}>
-              <div
-                className={`max-w-[75%] p-3 rounded-lg ${
-                  message.isUser ? 'bg-blue-500 text-white ml-auto' : 'bg-white text-gray-800 mr-auto'
-                }`}
-              >
-                {message.text}
-              </div>
+    <div className="flex flex-col h-screen">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-[70%] rounded-lg p-3 ${
+                message.isUser
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-800'
+              }`}
+            >
+              <div>{message.text}</div>
+              {!message.isUser && message.usage && (
+                <div className="mt-2 text-xs italic text-gray-600">
+                  {`${message.usage.prompt_tokens} prompt + ${message.usage.completion_tokens} completion tokens | ${message.usage.model} | ${formatCost(message.usage.cost)}`}
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-        <form onSubmit={handleSubmit} className="flex gap-2">
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleSubmit} className="p-4 border-t">
+        <div className="flex space-x-4">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            className="flex-1 p-2 border border-gray-300 rounded"
+            className="flex-1 p-2 border rounded-lg"
             placeholder="Type your message..."
           />
-          <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
             Send
           </button>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 };

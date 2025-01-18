@@ -10,6 +10,7 @@ export const setupRoutes = (app: Express) => {
   let currentAccount: SheetAccount | null = null;
   let alpaca: AlpacaClient | null = null;
   let isInitialized = false;
+  let chatService: ChatService | null = null;
 
   const validateCredentials = (account: SheetAccount) => {
     if (!account.alpacaApiKey || !account.alpacaApiSecret) {
@@ -43,12 +44,16 @@ export const setupRoutes = (app: Express) => {
         throw new Error('Failed to verify account access');
       }
 
+      // Initialize chat service
+      chatService = await ChatService.initialize(alpaca);
+
       console.log('Successfully verified Alpaca account access');
       isInitialized = true;
     } catch (error) {
       isInitialized = false;
       alpaca = null;
       currentAccount = null;
+      chatService = null;
       console.error('Failed to initialize Alpaca client:', error);
       throw error;
     }
@@ -390,6 +395,7 @@ export const setupRoutes = (app: Express) => {
   app.post('/api/chat', ensureInitialized, async (req: Request, res: Response) => {
     try {
       if (!alpaca) throw new Error('Alpaca client not initialized');
+      if (!chatService) throw new Error('Chat service not initialized');
       
       const { message } = req.body;
       if (!message) {
@@ -397,7 +403,6 @@ export const setupRoutes = (app: Express) => {
       }
 
       console.log('Chat request received:', message);
-      const chatService = await ChatService.initialize(alpaca);
       const response = await chatService.processMessage(message);
       console.log('Chat response to be sent:', response);
       res.json(response);
