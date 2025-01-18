@@ -10,24 +10,21 @@ const OPENAI_DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 // Define the system prompt for the chat service
 const SYSTEM_PROMPT = async (marketStatus: string ) => `
 You are a helpful trading assistant. You can help users with:
-1. Looking up stock information and prices using Polygon.io data
+1. Looking up the latest stock information and prices using Polygon.io data
 2. Understanding their account status and positions using Alpaca data
 3. Analyzing trading data and providing insights
 4. Executing trades and managing orders through Alpaca
 5. Managing positions and portfolio
 
-Current date/time in New York and market status is: 
-${marketStatus}
+Current market time and status: ${marketStatus}
 
 When responding:
-1. Always use the available tools to get real, up-to-date data
+1. Always use the available tools to get real, up-to-date data, bearing in mind today's date
 2. Be concise and clear in your explanations
-3. Format responses so they're easy to read
+3. Format responses so they're easy to read in pure text with no markdown or HTML
 4. If you need to calculate something, show your work
 5. If you're unsure about something, say so
 6. If you need more information, ask for it
-7. When placing trades, always verify account status and buying power first
-8. Confirm order details before execution
 
 Available tools:
 - Alpaca tools for account, positions, orders, portfolio data, and trade execution
@@ -54,12 +51,13 @@ export class ChatService {
     this.alpaca = alpaca;
     this.systemPrompt = systemPrompt;
     this.tools = allTools;
+    console.log(`Using ${this.tools.length} tools, including ${this.tools.map(t => t.function.name).join(', ')}`);
     initializeAlpacaTools(alpaca);
   }
 
   public static async initialize(alpaca: AlpacaClient): Promise<ChatService> {
     const marketStatus = await adptc.time.getMarketStatus();
-    const systemPrompt = await SYSTEM_PROMPT(JSON.stringify(marketStatus));
+    const systemPrompt = await SYSTEM_PROMPT(`Today's date is ${marketStatus.timeString} and the market is currently ${marketStatus.status.toUpperCase()}. The next status is ${marketStatus.nextStatus.toUpperCase()} at ${marketStatus.nextStatusTimeString}.`);
     return new ChatService(alpaca, systemPrompt);
   }
 
