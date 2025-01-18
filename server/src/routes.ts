@@ -397,7 +397,7 @@ export const setupRoutes = (app: Express) => {
       }
 
       console.log('Chat request received:', message);
-      const chatService = new ChatService(alpaca);
+      const chatService = await ChatService.initialize(alpaca);
       const response = await chatService.processMessage(message);
       console.log('Chat response to be sent:', response);
       res.json(response);

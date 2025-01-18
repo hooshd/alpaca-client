@@ -205,7 +205,7 @@ export const alpacaTools: Tool[] = [
     type: 'function',
     function: {
       name: 'get_orders',
-      description: 'Get a list of orders',
+      description: 'Get a list of orders on Alpaca',
       parameters: {
         type: 'object',
         properties: {
@@ -221,7 +221,7 @@ export const alpacaTools: Tool[] = [
     type: 'function',
     function: {
       name: 'create_order',
-      description: 'Create a new order',
+      description: 'Create a new order on Alpaca',
       parameters: {
         type: 'object',
         properties: {

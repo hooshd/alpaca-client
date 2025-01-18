@@ -1,26 +1,43 @@
 import { lumic, Tool, LLMResponse } from 'lumic-utility-functions';
 import { allTools, executeToolCall, initializeAlpacaTools } from './llm-tools';
 import { AlpacaClient } from './alpacaClient';
+import { adaptic as adptc} from 'adaptic-utils';
 
 const OPENAI_DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
+
+
 // Define the system prompt for the chat service
-const SYSTEM_PROMPT = `
+const SYSTEM_PROMPT = async (marketStatus: string ) => `
 You are a helpful trading assistant. You can help users with:
 1. Looking up stock information and prices using Polygon.io data
 2. Understanding their account status and positions using Alpaca data
 3. Analyzing trading data and providing insights
+4. Executing trades and managing orders through Alpaca
+5. Managing positions and portfolio
+
+Current date/time in New York and market status is: 
+${marketStatus}
 
 When responding:
-1. Always use the available tools to get real data
+1. Always use the available tools to get real, up-to-date data
 2. Be concise and clear in your explanations
-3. If you need to calculate something, show your work
-4. If you're unsure about something, say so
-5. If you need more information, ask for it
+3. Format responses so they're easy to read
+4. If you need to calculate something, show your work
+5. If you're unsure about something, say so
+6. If you need more information, ask for it
+7. When placing trades, always verify account status and buying power first
+8. Confirm order details before execution
 
 Available tools:
-- Alpaca tools for account, positions, orders, and portfolio data
+- Alpaca tools for account, positions, orders, portfolio data, and trade execution
 - Polygon tools for market data, stock information, and price history
+
+For trade execution, you can:
+1. Create new orders (market, limit, stop, etc.)
+2. Cancel existing orders
+3. Close positions
+4. Modify existing orders
 `;
 
 interface ChatResponse {
@@ -33,11 +50,17 @@ export class ChatService {
   private tools: Tool[];
   private systemPrompt: string;
 
-  constructor(alpaca: AlpacaClient) {
+  private constructor(alpaca: AlpacaClient, systemPrompt: string) {
     this.alpaca = alpaca;
-    this.systemPrompt = SYSTEM_PROMPT;
+    this.systemPrompt = systemPrompt;
     this.tools = allTools;
     initializeAlpacaTools(alpaca);
+  }
+
+  public static async initialize(alpaca: AlpacaClient): Promise<ChatService> {
+    const marketStatus = await adptc.time.getMarketStatus();
+    const systemPrompt = await SYSTEM_PROMPT(JSON.stringify(marketStatus));
+    return new ChatService(alpaca, systemPrompt);
   }
 
   async processMessage(message: string): Promise<ChatResponse> {
