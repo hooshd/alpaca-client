@@ -411,4 +411,17 @@ export const setupRoutes = (app: Express) => {
       res.status(500).json({ error: `Chat error: ${error?.message || 'Unknown error'}` });
     }
   });
+
+  // Reset chat history endpoint
+  app.post('/api/chat/reset', ensureInitialized, async (_req: Request, res: Response) => {
+    try {
+      if (!chatService) throw new Error('Chat service not initialized');
+      
+      chatService.reset();
+      res.json({ message: 'Chat history reset successfully' });
+    } catch (error: any) {
+      console.error('Error in chat reset endpoint:', error);
+      res.status(500).json({ error: `Reset error: ${error?.message || 'Unknown error'}` });
+    }
+  });
 };

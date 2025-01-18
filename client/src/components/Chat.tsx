@@ -14,18 +14,19 @@ interface Message {
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    // Add user message
-    const userMessage: Message = {
+    const newMessage: Message = {
       text: inputText,
       isUser: true,
     };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, newMessage]);
     setInputText('');
+    setIsLoading(true);
 
     try {
       const response = await fetch('/api/chat', {
@@ -44,7 +45,7 @@ const Chat: React.FC = () => {
       const assistantMessage: Message = {
         text: data.message,
         isUser: false,
-        usage: data.usage
+        usage: data.usage,
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
@@ -54,6 +55,28 @@ const Chat: React.FC = () => {
         isUser: false,
       };
       setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      const response = await fetch('/api/chat/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reset chat');
+      }
+
+      setMessages([]);
+      console.log('Chat history reset successfully');
+    } catch (error) {
+      console.error('Error resetting chat:', error);
     }
   };
 
@@ -91,23 +114,81 @@ const Chat: React.FC = () => {
           </div>
         ))}
       </div>
-      <form onSubmit={handleSubmit} className="p-4 border-t">
-        <div className="flex space-x-4">
+      <div className="chat-input-container">
+        <form onSubmit={handleSubmit} className="chat-form">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            className="flex-1 p-2 border rounded-lg"
             placeholder="Type your message..."
+            disabled={isLoading}
+            className="chat-input"
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            disabled={isLoading || !inputText.trim()}
+            className="chat-submit"
           >
             Send
           </button>
-        </div>
-      </form>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="chat-reset"
+            disabled={isLoading || messages.length === 0}
+          >
+            Reset
+          </button>
+        </form>
+      </div>
+      <style>
+        {`
+          .chat-form {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+          }
+
+          .chat-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+          }
+
+          .chat-submit,
+          .chat-reset {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+
+          .chat-submit {
+            background-color: #007bff;
+            color: white;
+          }
+
+          .chat-reset {
+            background-color: #6c757d;
+            color: white;
+          }
+
+          .chat-submit:hover,
+          .chat-reset:hover {
+            opacity: 0.9;
+          }
+
+          .chat-submit:disabled,
+          .chat-reset:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+          }
+        `}
+      </style>
     </div>
   );
 };

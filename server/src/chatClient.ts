@@ -80,6 +80,11 @@ export class ChatService {
     return new ChatService(alpaca, systemPrompt);
   }
 
+  public reset(): void {
+    console.log('Resetting chat history');
+    this.messages = [{ role: 'system', content: this.systemPrompt }];
+  }
+
   async processMessage(message: string): Promise<ChatResponse> {
     try {
       console.log('Processing message:', message);
