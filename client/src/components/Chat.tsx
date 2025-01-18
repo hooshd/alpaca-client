@@ -38,7 +38,7 @@ const Chat: React.FC = () => {
 
       // Add server response
       const serverMessage: Message = {
-        text: data.response,
+        text: data.message || 'No response received',
         isUser: false,
       };
       setMessages((prev) => [...prev, serverMessage]);

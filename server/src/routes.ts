@@ -396,12 +396,14 @@ export const setupRoutes = (app: Express) => {
         throw new Error('Message is required');
       }
 
+      console.log('Chat request received:', message);
       const chatService = new ChatService(alpaca);
       const response = await chatService.processMessage(message);
+      console.log('Chat response to be sent:', response);
       res.json(response);
     } catch (error: any) {
       console.error('Error in chat endpoint:', error);
-      res.status(500).json({ error: error?.message || 'Internal server error' });
+      res.status(500).json({ error: `Chat error: ${error?.message || 'Unknown error'}` });
     }
   });
 };

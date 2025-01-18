@@ -145,53 +145,155 @@ export const polygonTools: Tool[] = [
   },
 ];
 
-// Define all available tools
+// Define all available Alpaca tools
 export const alpacaTools: Tool[] = [
   {
     type: 'function',
     function: {
       name: 'get_account_info',
-      description: 'Get current account information including cash balance, portfolio value, and trading status',
+      description: 'Get current account information including cash balances, buying power, and equity',
       parameters: {
         type: 'object',
         properties: {},
-        required: [],
-      },
-    },
+        required: []
+      }
+    }
   },
   {
     type: 'function',
     function: {
       name: 'get_positions',
-      description: 'Get all current positions in the account',
+      description: 'Get all open positions in the account',
       parameters: {
         type: 'object',
         properties: {},
-        required: [],
-      },
-    },
+        required: []
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'close_position',
+      description: 'Close a specific position by symbol or asset ID',
+      parameters: {
+        type: 'object',
+        properties: {
+          symbol_or_asset_id: { type: 'string', description: 'Symbol or asset ID of the position to close' },
+          qty: { type: 'number', description: 'Optional quantity to close' },
+          percentage: { type: 'number', description: 'Optional percentage of position to close' }
+        },
+        required: ['symbol_or_asset_id']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'close_all_positions',
+      description: 'Close all open positions',
+      parameters: {
+        type: 'object',
+        properties: {
+          cancel_orders: { type: 'boolean', description: 'Whether to cancel open orders' }
+        },
+        required: []
+      }
+    }
   },
   {
     type: 'function',
     function: {
       name: 'get_orders',
-      description: 'Get orders based on their status',
+      description: 'Get a list of orders',
       parameters: {
         type: 'object',
         properties: {
-          status: {
-            type: 'string',
-            description: 'Order status to filter by (open, closed, all)',
-            enum: ['open', 'closed', 'all'],
-          },
-          limit: {
-            type: 'number',
-            description: 'Maximum number of orders to return',
-          },
+          status: { type: 'string', description: 'Order status to filter by (open, closed, all)' },
+          limit: { type: 'number', description: 'Maximum number of orders to return' },
+          nested: { type: 'boolean', description: 'Whether to include nested multi-leg orders' }
         },
-        required: ['status', 'limit'],
-      },
-    },
+        required: ['status', 'limit', 'nested']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_order',
+      description: 'Create a new order',
+      parameters: {
+        type: 'object',
+        properties: {
+          symbol: { type: 'string', description: 'Symbol to trade' },
+          qty: { type: 'number', description: 'Quantity of shares' },
+          notional: { type: 'number', description: 'Dollar amount to trade' },
+          side: { type: 'string', description: 'buy or sell' },
+          type: { type: 'string', description: 'market, limit, stop, stop_limit, trailing_stop' },
+          time_in_force: { type: 'string', description: 'day, gtc, ioc, fok' },
+          limit_price: { type: 'number', description: 'Limit price for limit orders' },
+          extended_hours: { type: 'boolean', description: 'Whether to allow trading in extended hours' },
+          trail_percent: { type: 'string', description: 'Trailing stop percentage' }
+        },
+        required: ['symbol', 'side', 'type', 'time_in_force']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'cancel_order',
+      description: 'Cancel a specific order',
+      parameters: {
+        type: 'object',
+        properties: {
+          order_id: { type: 'string', description: 'ID of the order to cancel' }
+        },
+        required: ['order_id']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'cancel_all_orders',
+      description: 'Cancel all open orders',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'patch_order',
+      description: 'Modify an existing order',
+      parameters: {
+        type: 'object',
+        properties: {
+          order_id: { type: 'string', description: 'ID of the order to modify' },
+          trail: { type: 'string', description: 'New trailing stop amount' }
+        },
+        required: ['order_id']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_asset_info',
+      description: 'Get information about tradable assets',
+      parameters: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', description: 'Asset status (active, inactive)' },
+          tradable: { type: 'boolean', description: 'Whether the asset is tradable' }
+        },
+        required: ['status', 'tradable']
+      }
+    }
   },
   {
     type: 'function',
@@ -213,24 +315,6 @@ export const alpacaTools: Tool[] = [
           },
         },
         required: ['period', 'timeframe'],
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'get_asset_info',
-      description: 'Get information about tradable assets',
-      parameters: {
-        type: 'object',
-        properties: {
-          status: {
-            type: 'string',
-            description: 'Asset status to filter by',
-            enum: ['active', 'inactive'],
-          },
-        },
-        required: ['status'],
       },
     },
   },
@@ -287,13 +371,16 @@ type ToolCallResult =
   | AccountInfo 
   | Position[] 
   | Order[] 
+  | Order
   | Asset[] 
   | PolygonPriceData 
   | PolygonPriceData[] 
   | PolygonQuote 
   | SimplifiedPriceData 
   | SimplifiedPriceData[] 
-  | { timestamp: number };
+  | { timestamp: number }
+  | { success: boolean; message: string }
+  | any; // For generic API responses
 
 // Function to execute tool calls
 export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallResult[]> {
@@ -319,13 +406,68 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
           if (positions) results.push(positions);
           break;
         }
+        case 'close_position': {
+          const result = await alpacaClient.closePosition(params.symbol_or_asset_id, {
+            qty: params.qty,
+            percentage: params.percentage
+          });
+          if (result) results.push(result);
+          break;
+        }
+        case 'close_all_positions': {
+          const result = await alpacaClient.closeAllPositions({
+            cancel_orders: params.cancel_orders
+          });
+          if (result) results.push(result);
+          break;
+        }
         case 'get_orders': {
           const orders = await alpacaClient.getOrders({
             status: params.status,
             limit: params.limit,
-            nested: true,
+            nested: params.nested,
           });
           if (orders) results.push(orders);
+          break;
+        }
+        case 'create_order': {
+          const order = await alpacaClient.createOrder({
+            symbol: params.symbol,
+            qty: params.qty,
+            notional: params.notional,
+            side: params.side,
+            type: params.type,
+            time_in_force: params.time_in_force,
+            limit_price: params.limit_price,
+            extended_hours: params.extended_hours,
+            trail_percent: params.trail_percent
+          });
+          if (order) results.push(order);
+          break;
+        }
+        case 'cancel_order': {
+          await alpacaClient.cancelOrder(params.order_id);
+          results.push({ success: true, message: 'Order cancelled' });
+          break;
+        }
+        case 'cancel_all_orders': {
+          await alpacaClient.cancelAllOrders();
+          results.push({ success: true, message: 'All orders cancelled' });
+          break;
+        }
+        case 'patch_order': {
+          const order = await alpacaClient.patchOrder(params.order_id, {
+            trail: params.trail
+          });
+          if (order) results.push(order);
+          break;
+        }
+        case 'get_asset_info': {
+          const assets = await alpacaClient.getAssets({
+            status: params.status,
+            tradable: params.tradable,
+          });
+          if (assets) results.push(assets);
           break;
         }
         case 'get_portfolio_history': {
@@ -335,14 +477,6 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
             intraday_reporting: 'market_hours',
           });
           if (history) results.push(history as any);
-          break;
-        }
-        case 'get_asset_info': {
-          const assets = await alpacaClient.getAssets({
-            status: params.status,
-            tradable: true,
-          });
-          if (assets) results.push(assets);
           break;
         }
         case 'get_bars': {
