@@ -11,6 +11,7 @@ export const setupRoutes = (app: Express) => {
   let alpaca: AlpacaClient | null = null;
   let isInitialized = false;
   let chatService: ChatService | null = null;
+  let initializationPromise: Promise<void> | null = null;
 
   const validateCredentials = (account: SheetAccount) => {
     if (!account.alpacaApiKey || !account.alpacaApiSecret) {
@@ -25,38 +26,56 @@ export const setupRoutes = (app: Express) => {
   };
 
   const initializeAlpacaClient = async (account: SheetAccount): Promise<void> => {
-    try {
-      console.log(`Initializing Alpaca client for account: ${account.display_name}`);
-      console.log(`Account type from sheet: ${account.type}`);
-
-      validateCredentials(account);
-
-      currentAccount = account;
-      alpaca = new AlpacaClient({
-        keyId: account.alpacaApiKey,
-        secretKey: account.alpacaApiSecret,
-        isPaper: account.type.toLowerCase() === 'paper',
-      });
-
-      // Verify the client works by making a test call
-      const accountInfo = await alpaca.getAccount();
-      if (!accountInfo) {
-        throw new Error('Failed to verify account access');
+    // If there's already an initialization in progress, wait for it
+    if (initializationPromise) {
+      try {
+        await initializationPromise;
+        return;
+      } catch (error) {
+        console.error('Previous initialization failed:', error);
+        // Continue with new initialization
       }
-
-      // Initialize chat service
-      chatService = await ChatService.initialize(alpaca);
-
-      console.log('Successfully verified Alpaca account access');
-      isInitialized = true;
-    } catch (error) {
-      isInitialized = false;
-      alpaca = null;
-      currentAccount = null;
-      chatService = null;
-      console.error('Failed to initialize Alpaca client:', error);
-      throw error;
     }
+
+    // Create new initialization promise
+    initializationPromise = (async () => {
+      try {
+        console.log(`Initializing Alpaca client for account: ${account.display_name}`);
+        console.log(`Account type from sheet: ${account.type}`);
+
+        validateCredentials(account);
+
+        currentAccount = account;
+        alpaca = new AlpacaClient({
+          keyId: account.alpacaApiKey,
+          secretKey: account.alpacaApiSecret,
+          isPaper: account.type.toLowerCase() === 'paper',
+        });
+
+        // Verify the client works by making a test call
+        const accountInfo = await alpaca.getAccount();
+        if (!accountInfo) {
+          throw new Error('Failed to verify account access');
+        }
+
+        // Initialize chat service
+        chatService = await ChatService.initialize(alpaca);
+
+        console.log('Successfully verified Alpaca account access');
+        isInitialized = true;
+      } catch (error) {
+        isInitialized = false;
+        alpaca = null;
+        currentAccount = null;
+        chatService = null;
+        console.error('Failed to initialize Alpaca client:', error);
+        throw error;
+      } finally {
+        initializationPromise = null;
+      }
+    })();
+
+    await initializationPromise;
   };
 
   const ensureInitialized = async (req: Request, res: Response, next: Function) => {
@@ -87,15 +106,16 @@ export const setupRoutes = (app: Express) => {
       const accounts = await getAccounts();
       console.log(`Found ${accounts.length} accounts`);
 
-      // If we have a current account, find its updated version
+      // Only initialize if we're not already initialized or if the current account needs updating
       if (currentAccount) {
         const updatedAccount = accounts.find((acc) => acc.name === currentAccount?.name);
-        if (updatedAccount) {
+        if (updatedAccount && 
+            (updatedAccount.alpacaApiKey !== currentAccount.alpacaApiKey || 
+             updatedAccount.alpacaApiSecret !== currentAccount.alpacaApiSecret ||
+             updatedAccount.type !== currentAccount.type)) {
           await initializeAlpacaClient(updatedAccount);
         }
-      }
-      // If no current account but accounts exist, initialize with first one
-      else if (accounts.length > 0 && !isInitialized) {
+      } else if (accounts.length > 0 && !isInitialized) {
         await initializeAlpacaClient(accounts[0]);
       }
 
@@ -424,4 +444,9 @@ export const setupRoutes = (app: Express) => {
       res.status(500).json({ error: `Reset error: ${error?.message || 'Unknown error'}` });
     }
   });
+
+  // Return the initialization function so it can be used during server startup
+  return {
+    initializeAlpacaClient
+  };
 };
