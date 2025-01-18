@@ -12,12 +12,6 @@ import {
 
 const OPENAI_DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
-interface Message {
-  role: 'user' | 'assistant' | 'system' | 'function';
-  content: string;
-  name?: string;
-}
-
 interface ChatResponse {
   message: string;
   data?: any;
@@ -70,7 +64,6 @@ export class ChatService {
     this.systemPrompt = systemPrompt;
     this.tools = allTools;
     this.messages = [{ role: 'system', content: systemPrompt }];
-    console.log(`Using ${this.tools.length} tools, including ${this.tools.map(t => t.function.name).join(', ')}`);
     initializeAlpacaTools(alpaca);
   }
 

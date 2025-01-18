@@ -117,3 +117,13 @@ export interface SimplifiedPriceData {
     close: number;
     vol: number;
 }
+
+export interface ProcessedAssetOverviewResponse {
+    asset: {
+      id: string;
+      symbol: string;
+      [key: string]: any;
+    } | null;
+    error: string | null;
+    success: boolean;
+  }
