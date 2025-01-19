@@ -4,6 +4,15 @@ import { AlpacaClient } from './alpacaClient';
 import { Order, Position, Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData, AVNewsArticle } from './types';
 import adaptic, {types} from 'adaptic-backend';
 import { apolloClient } from './apollo-client';
+import { 
+  EMAData, 
+  MACDData, 
+  RSIData, 
+  StochData, 
+  BollingerBandsData, 
+  SupportResistanceData, 
+  FibonacciData 
+} from 'adaptic-utils';
 
 // Initialize alpaca client instance
 let alpacaClient: AlpacaClient | null = null;
@@ -410,8 +419,256 @@ export const alphaVantageTools: Tool[] = [
   },
 ];
 
+export const taTools: Tool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'calculate_ema',
+      description: 'Calculate Exponential Moving Average (EMA) for price data',
+      parameters: {
+        type: 'object',
+        properties: {
+          priceData: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                date: { type: 'string' },
+                close: { type: 'number' },
+              },
+            },
+            description: 'Array of price data objects with date and close price',
+          },
+          period: {
+            type: 'number',
+            description: 'Period for EMA calculation (default: 20)',
+          },
+          period2: {
+            type: 'number',
+            description: 'Optional second period for dual EMA calculation (default: 9)',
+          },
+        },
+        required: ['priceData'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'calculate_macd',
+      description: 'Calculate Moving Average Convergence Divergence (MACD)',
+      parameters: {
+        type: 'object',
+        properties: {
+          priceData: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                date: { type: 'string' },
+                close: { type: 'number' },
+              },
+            },
+            description: 'Array of price data objects',
+          },
+          shortPeriod: {
+            type: 'number',
+            description: 'Short-term period (default: 12)',
+          },
+          longPeriod: {
+            type: 'number',
+            description: 'Long-term period (default: 26)',
+          },
+          signalPeriod: {
+            type: 'number',
+            description: 'Signal line period (default: 9)',
+          },
+        },
+        required: ['priceData'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'calculate_rsi',
+      description: 'Calculate Relative Strength Index (RSI)',
+      parameters: {
+        type: 'object',
+        properties: {
+          priceData: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                date: { type: 'string' },
+                close: { type: 'number' },
+              },
+            },
+            description: 'Array of price data objects',
+          },
+          period: {
+            type: 'number',
+            description: 'Period for RSI calculation (default: 14)',
+          },
+        },
+        required: ['priceData'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'calculate_stochastic',
+      description: 'Calculate Stochastic Oscillator',
+      parameters: {
+        type: 'object',
+        properties: {
+          priceData: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                date: { type: 'string' },
+                high: { type: 'number' },
+                low: { type: 'number' },
+                close: { type: 'number' },
+              },
+            },
+            description: 'Array of price data objects',
+          },
+          lookbackPeriod: {
+            type: 'number',
+            description: 'Lookback period (default: 5)',
+          },
+          signalPeriod: {
+            type: 'number',
+            description: 'Signal period (default: 3)',
+          },
+          smoothingFactor: {
+            type: 'number',
+            description: 'Smoothing factor (default: 3)',
+          },
+        },
+        required: ['priceData'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'calculate_bollinger_bands',
+      description: 'Calculate Bollinger Bands',
+      parameters: {
+        type: 'object',
+        properties: {
+          priceData: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                date: { type: 'string' },
+                close: { type: 'number' },
+              },
+            },
+            description: 'Array of price data objects',
+          },
+          period: {
+            type: 'number',
+            description: 'Period for calculation (default: 20)',
+          },
+          standardDeviations: {
+            type: 'number',
+            description: 'Number of standard deviations (default: 2)',
+          },
+        },
+        required: ['priceData'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'calculate_support_resistance',
+      description: 'Calculate Support and Resistance levels',
+      parameters: {
+        type: 'object',
+        properties: {
+          priceData: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                date: { type: 'string' },
+                high: { type: 'number' },
+                low: { type: 'number' },
+                close: { type: 'number' },
+                vol: { type: 'number' },
+              },
+            },
+            description: 'Array of price data objects',
+          },
+          maxLevels: {
+            type: 'number',
+            description: 'Maximum number of levels to return (default: 5)',
+          },
+          lookbackPeriod: {
+            type: 'number',
+            description: 'Period to analyze for support/resistance (default: 10)',
+          },
+        },
+        required: ['priceData'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'calculate_fibonacci_levels',
+      description: 'Calculate Fibonacci Retracement and Extension levels',
+      parameters: {
+        type: 'object',
+        properties: {
+          priceData: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                date: { type: 'string' },
+                high: { type: 'number' },
+                low: { type: 'number' },
+                close: { type: 'number' },
+              },
+            },
+            description: 'Array of price data objects',
+          },
+          lookbackPeriod: {
+            type: 'number',
+            description: 'Period to analyze (default: 20)',
+          },
+          retracementLevels: {
+            type: 'array',
+            items: { type: 'number' },
+            description: 'Retracement levels (default: [0.236, 0.382, 0.5, 0.618, 0.786])',
+          },
+          extensionLevels: {
+            type: 'array',
+            items: { type: 'number' },
+            description: 'Extension levels (default: [1.272, 1.618, 2.618])',
+          },
+          reverseDirection: {
+            type: 'boolean',
+            description: 'True for downtrend, false for uptrend (default: false)',
+          },
+        },
+        required: ['priceData'],
+      },
+    },
+  },
+];
+
 // Combine Alpaca, Polygon, and Alpha Vantage tools
-export const allTools: Tool[] = [...alpacaTools, ...polygonTools, ...alphaVantageTools];
+export const allTools: Tool[] = [...alpacaTools, ...polygonTools, ...alphaVantageTools, ...taTools];
 
 // Helper function to convert ISO 8601 to Unix milliseconds
 function convertISO8601TimeToUnixMilliseconds(t: string): number {
@@ -623,6 +880,66 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
           let startDate = params.start ? new Date(params.start) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
           const news = await adptc.av.fetchTickerNews(params.symbol, startDate, params.limit);
           results.push(news);
+          break;
+        }
+        // Technical Analysis Tools
+        case 'calculate_ema': {
+          const emaData = adptc.ta.calculateEMA(params.priceData, {
+            period: params.period,
+            period2: params.period2,
+          });
+          results.push(emaData);
+          break;
+        }
+        case 'calculate_macd': {
+          const macdData = adptc.ta.calculateMACD(params.priceData, {
+            shortPeriod: params.shortPeriod,
+            longPeriod: params.longPeriod,
+            signalPeriod: params.signalPeriod,
+          });
+          results.push(macdData);
+          break;
+        }
+        case 'calculate_rsi': {
+          const rsiData = adptc.ta.calculateRSI(params.priceData, {
+            period: params.period,
+          });
+          results.push(rsiData);
+          break;
+        }
+        case 'calculate_stochastic': {
+          const stochData = adptc.ta.calculateStochasticOscillator(params.priceData, {
+            lookbackPeriod: params.lookbackPeriod,
+            signalPeriod: params.signalPeriod,
+            smoothingFactor: params.smoothingFactor,
+          });
+          results.push(stochData);
+          break;
+        }
+        case 'calculate_bollinger_bands': {
+          const bbData = adptc.ta.calculateBollingerBands(params.priceData, {
+            period: params.period,
+            standardDeviations: params.standardDeviations,
+          });
+          results.push(bbData);
+          break;
+        }
+        case 'calculate_support_resistance': {
+          const srData = adptc.ta.calculateSupportAndResistance(params.priceData, {
+            maxLevels: params.maxLevels,
+            lookbackPeriod: params.lookbackPeriod,
+          });
+          results.push(srData);
+          break;
+        }
+        case 'calculate_fibonacci_levels': {
+          const fibData = adptc.ta.calculateFibonacciLevels(params.priceData, {
+            lookbackPeriod: params.lookbackPeriod,
+            retracementLevels: params.retracementLevels,
+            extensionLevels: params.extensionLevels,
+            reverseDirection: params.reverseDirection,
+          });
+          results.push(fibData);
           break;
         }
         default:
