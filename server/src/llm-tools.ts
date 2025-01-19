@@ -2,6 +2,9 @@ import { Tool, ToolCall } from 'lumic-utility-functions';
 import { adaptic as adptc } from 'adaptic-utils';
 import { AlpacaClient } from './alpacaClient';
 import { Order, Position, Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData } from './types';
+import adaptic, {types} from 'adaptic-backend';
+import { apolloClient } from './apollo-client';
+
 
 // Initialize alpaca client instance
 let alpacaClient: AlpacaClient | null = null;
@@ -82,8 +85,7 @@ export const polygonTools: Tool[] = [
           },
           end: {
             type: 'string',
-            description:
-              'End timestamp in ISO 8601 format, i.e. "YYYY-MM-DDTHH:MM:SSZ". Default is now.',
+            description: 'End timestamp in ISO 8601 format, i.e. "YYYY-MM-DDTHH:MM:SSZ". Default is now.',
           },
           multiplier: {
             type: 'number',
@@ -107,8 +109,7 @@ export const polygonTools: Tool[] = [
     type: 'function',
     function: {
       name: 'fetch_closes_and_volumes',
-      description:
-        'Get simplified price data for a stock, including dates, closing prices, and daily volumes.',
+      description: 'Get simplified price data for a stock, including dates, closing prices, and daily volumes.',
       parameters: {
         type: 'object',
         properties: {
@@ -122,8 +123,7 @@ export const polygonTools: Tool[] = [
           },
           end: {
             type: 'string',
-            description:
-              'End timestamp in ISO 8601 format, i.e. "YYYY-MM-DDTHH:MM:SSZ". Default is now.',
+            description: 'End timestamp in ISO 8601 format, i.e. "YYYY-MM-DDTHH:MM:SSZ". Default is now.',
           },
           multiplier: {
             type: 'number',
@@ -155,9 +155,9 @@ export const alpacaTools: Tool[] = [
       parameters: {
         type: 'object',
         properties: {},
-        required: []
-      }
-    }
+        required: [],
+      },
+    },
   },
   {
     type: 'function',
@@ -167,9 +167,9 @@ export const alpacaTools: Tool[] = [
       parameters: {
         type: 'object',
         properties: {},
-        required: []
-      }
-    }
+        required: [],
+      },
+    },
   },
   {
     type: 'function',
@@ -181,11 +181,11 @@ export const alpacaTools: Tool[] = [
         properties: {
           symbol_or_asset_id: { type: 'string', description: 'Symbol or asset ID of the position to close' },
           qty: { type: 'number', description: 'Optional quantity to close' },
-          percentage: { type: 'number', description: 'Optional percentage of position to close' }
+          percentage: { type: 'number', description: 'Optional percentage of position to close' },
         },
-        required: ['symbol_or_asset_id']
-      }
-    }
+        required: ['symbol_or_asset_id'],
+      },
+    },
   },
   {
     type: 'function',
@@ -195,11 +195,11 @@ export const alpacaTools: Tool[] = [
       parameters: {
         type: 'object',
         properties: {
-          cancel_orders: { type: 'boolean', description: 'Whether to cancel open orders' }
+          cancel_orders: { type: 'boolean', description: 'Whether to cancel open orders' },
         },
-        required: []
-      }
-    }
+        required: [],
+      },
+    },
   },
   {
     type: 'function',
@@ -211,11 +211,11 @@ export const alpacaTools: Tool[] = [
         properties: {
           status: { type: 'string', description: 'Order status to filter by (open, closed, all)' },
           limit: { type: 'number', description: 'Maximum number of orders to return' },
-          nested: { type: 'boolean', description: 'Whether to include nested multi-leg orders' }
+          nested: { type: 'boolean', description: 'Whether to include nested multi-leg orders' },
         },
-        required: ['status', 'limit', 'nested']
-      }
-    }
+        required: ['status', 'limit', 'nested'],
+      },
+    },
   },
   {
     type: 'function',
@@ -233,11 +233,11 @@ export const alpacaTools: Tool[] = [
           time_in_force: { type: 'string', description: 'day, gtc, ioc, fok' },
           limit_price: { type: 'number', description: 'Limit price for limit orders' },
           extended_hours: { type: 'boolean', description: 'Whether to allow trading in extended hours' },
-          trail_percent: { type: 'string', description: 'Trailing stop percentage' }
+          trail_percent: { type: 'string', description: 'Trailing stop percentage' },
         },
-        required: ['symbol', 'side', 'type', 'time_in_force']
-      }
-    }
+        required: ['symbol', 'side', 'type', 'time_in_force'],
+      },
+    },
   },
   {
     type: 'function',
@@ -247,11 +247,11 @@ export const alpacaTools: Tool[] = [
       parameters: {
         type: 'object',
         properties: {
-          order_id: { type: 'string', description: 'ID of the order to cancel' }
+          order_id: { type: 'string', description: 'ID of the order to cancel' },
         },
-        required: ['order_id']
-      }
-    }
+        required: ['order_id'],
+      },
+    },
   },
   {
     type: 'function',
@@ -261,9 +261,9 @@ export const alpacaTools: Tool[] = [
       parameters: {
         type: 'object',
         properties: {},
-        required: []
-      }
-    }
+        required: [],
+      },
+    },
   },
   {
     type: 'function',
@@ -274,11 +274,11 @@ export const alpacaTools: Tool[] = [
         type: 'object',
         properties: {
           order_id: { type: 'string', description: 'ID of the order to modify' },
-          trail: { type: 'string', description: 'New trailing stop amount' }
+          trail: { type: 'string', description: 'New trailing stop amount' },
         },
-        required: ['order_id']
-      }
-    }
+        required: ['order_id'],
+      },
+    },
   },
   {
     type: 'function',
@@ -289,11 +289,11 @@ export const alpacaTools: Tool[] = [
         type: 'object',
         properties: {
           status: { type: 'string', description: 'Asset status (active, inactive)' },
-          tradable: { type: 'boolean', description: 'Whether the asset is tradable' }
+          tradable: { type: 'boolean', description: 'Whether the asset is tradable' },
         },
-        required: ['status', 'tradable']
-      }
-    }
+        required: ['status', 'tradable'],
+      },
+    },
   },
   {
     type: 'function',
@@ -354,6 +354,35 @@ export const alpacaTools: Tool[] = [
   },
 ];
 
+export const adapticTools: Tool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'create_trade',
+      description: 'Create a trade object in the Adaptic backend',
+      parameters: {
+        type: 'object',
+        properties: {
+          alpacaAccountId: { type: 'string', description: 'ID of the Alpaca account for the trade' },
+          assetId: { type: 'string', description: 'ID of the asset being traded', optional: true },
+          qty: { type: 'number', description: 'Quantity of the trade' },
+          price: { type: 'number', description: 'Price of the trade' },
+          total: { type: 'number', description: 'Total value of the trade (qty * price)' },
+          optionType: { type: 'string', enum: ['CALL', 'PUT'], description: 'Type of option if this is an options trade', optional: true },
+          signal: { type: 'string', enum: ['PRICE_ACTION', 'MOVING_AVERAGE_CROSSOVER', 'MACD_CROSSOVER', 'BREAKOUT_ABOVE_RESISTANCE', 'BREAKDOWN_BELOW_SUPPORT', 'NO_SIGNAL'], description: 'Signal that triggered the trade' },
+          strategy: { type: 'string', enum: ['TECHNICAL_ANALYSIS', 'TREND_FOLLOWING', 'MEAN_REVERSION', 'MOMENTUM_STRATEGY', 'NEWS_BASED_STRATEGY', 'SENTIMENT_ANALYSIS', 'BREAKOUT_STRATEGY', 'NO_STRATEGY'], description: 'Trading strategy used' },
+          analysis: { type: 'string', description: 'Detailed analysis explaining the trade' },
+          summary: { type: 'string', description: 'Brief summary of the trade' },
+          confidence: { type: 'number', description: 'Confidence level in the trade (0-100)' },
+          timestamp: { type: 'string', description: 'ISO timestamp when the trade was executed' },
+          status: { type: 'string', enum: ['PENDING', 'EXECUTED', 'CANCELED', 'FAILED'], description: 'Current status of the trade' }
+        },
+        required: ['alpacaAccountId', 'qty', 'price', 'total', 'signal', 'strategy', 'analysis', 'summary', 'confidence', 'timestamp', 'status']
+      },
+    },
+  },
+];
+
 // Combine Alpaca and Polygon tools
 export const allTools: Tool[] = [...alpacaTools, ...polygonTools];
 
@@ -367,17 +396,17 @@ function convertISO8601TimeToUnixMilliseconds(t: string): number {
 }
 
 // Type for tool call results
-type ToolCallResult = 
-  | AccountInfo 
-  | Position[] 
-  | Order[] 
+type ToolCallResult =
+  | AccountInfo
+  | Position[]
+  | Order[]
   | Order
-  | Asset[] 
-  | PolygonPriceData 
-  | PolygonPriceData[] 
-  | PolygonQuote 
-  | SimplifiedPriceData 
-  | SimplifiedPriceData[] 
+  | Asset[]
+  | PolygonPriceData
+  | PolygonPriceData[]
+  | PolygonQuote
+  | SimplifiedPriceData
+  | SimplifiedPriceData[]
   | { timestamp: number }
   | { success: boolean; message: string }
   | any; // For generic API responses
@@ -392,7 +421,7 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
 
   for (const toolCall of toolCalls) {
     const params = JSON.parse(toolCall.function.arguments);
-    
+
     try {
       switch (toolCall.function.name) {
         // Alpaca tools
@@ -409,14 +438,14 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
         case 'close_position': {
           const result = await alpacaClient.closePosition(params.symbol_or_asset_id, {
             qty: params.qty,
-            percentage: params.percentage
+            percentage: params.percentage,
           });
           if (result) results.push(result);
           break;
         }
         case 'close_all_positions': {
           const result = await alpacaClient.closeAllPositions({
-            cancel_orders: params.cancel_orders
+            cancel_orders: params.cancel_orders,
           });
           if (result) results.push(result);
           break;
@@ -440,7 +469,7 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
             time_in_force: params.time_in_force,
             limit_price: params.limit_price,
             extended_hours: params.extended_hours,
-            trail_percent: params.trail_percent
+            trail_percent: params.trail_percent,
           });
           if (order) results.push(order);
           break;
@@ -457,7 +486,7 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
         }
         case 'patch_order': {
           const order = await alpacaClient.patchOrder(params.order_id, {
-            trail: params.trail
+            trail: params.trail,
           });
           if (order) results.push(order);
           break;
@@ -529,12 +558,38 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
             params.end = convertISO8601TimeToUnixMilliseconds(params.end);
           }
           const priceData = await adptc.polygon.fetchPrices(params);
-          const simplifiedData: SimplifiedPriceData[] = (priceData as unknown as PolygonPriceData[]).map(p => ({
+          const simplifiedData: SimplifiedPriceData[] = (priceData as unknown as PolygonPriceData[]).map((p) => ({
             date: p.date,
             close: p.close,
-            vol: p.vol
+            vol: p.vol,
           }));
           results.push(simplifiedData);
+          break;
+        }
+        case 'create_trade': {
+          const trade = await adaptic.trade.create({
+            alpacaAccountId: params.alpacaAccountId,
+            assetId: params.assetId,
+            qty: params.qty,
+            price: params.price,
+            total: params.total,
+            optionType: params.optionType,
+            signal: params.signal,
+            strategy: params.strategy,
+            analysis: params.analysis,
+            summary: params.summary,
+            confidence: params.confidence,
+            timestamp: params.timestamp,
+            status: params.status
+          } as types.Trade, apolloClient);
+          
+          if (trade) {
+            results.push({
+              success: true,
+              message: `Trade created successfully with ID: ${trade.id}`,
+              timestamp: Date.now()
+            });
+          }
           break;
         }
         default:

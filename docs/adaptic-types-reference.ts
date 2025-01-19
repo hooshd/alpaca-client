@@ -1,8 +1,3 @@
-
-
-// Adaptic types (created 19 dec 2024) DON'T IMPORT — for coding support
-
-// =====================
 // Enums
 // =====================
 export enum MarketSentimentLevel {
@@ -12,19 +7,19 @@ export enum MarketSentimentLevel {
   NEUTRAL = 'NEUTRAL',
   SOMEWHAT_BULLISH = 'SOMEWHAT_BULLISH',
   BULLISH = 'BULLISH',
-  VERY_BULLISH = 'VERY_BULLISH'
+  VERY_BULLISH = 'VERY_BULLISH',
 }
 
 export enum UserRole {
   OWNER = 'OWNER',
   ADMIN = 'ADMIN',
-  USER = 'USER'
+  USER = 'USER',
 }
 
 export enum ScheduledOptionOrderStatus {
   PENDING = 'PENDING',
   EXECUTED = 'EXECUTED',
-  CANCELED = 'CANCELED'
+  CANCELED = 'CANCELED',
 }
 
 export enum TradeStrategy {
@@ -41,7 +36,7 @@ export enum TradeStrategy {
   EVENT_DRIVEN = 'EVENT_DRIVEN',
   BREAKOUT_STRATEGY = 'BREAKOUT_STRATEGY',
   ORDER_FLOW_TRADING = 'ORDER_FLOW_TRADING',
-  NO_STRATEGY = 'NO_STRATEGY'
+  NO_STRATEGY = 'NO_STRATEGY',
 }
 
 export enum TradeSignal {
@@ -84,7 +79,7 @@ export enum TradeSignal {
   LIQUIDITY_DRIVEN_MOVE = 'LIQUIDITY_DRIVEN_MOVE',
   MACHINE_LEARNING_PREDICTION = 'MACHINE_LEARNING_PREDICTION',
   SENTIMENT_ANALYSIS_TRIGGER = 'SENTIMENT_ANALYSIS_TRIGGER',
-  NO_SIGNAL = 'NO_SIGNAL'
+  NO_SIGNAL = 'NO_SIGNAL',
 }
 
 export enum AssetType {
@@ -108,12 +103,12 @@ export enum AssetType {
   SWAP = 'SWAP',
   SPOT = 'SPOT',
   FORWARD = 'FORWARD',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 
 export enum AlpacaAccountType {
   PAPER = 'PAPER',
-  LIVE = 'LIVE'
+  LIVE = 'LIVE',
 }
 
 export enum ActionType {
@@ -123,19 +118,19 @@ export enum ActionType {
   SELL = 'SELL',
   CANCEL = 'CANCEL',
   ADJUST = 'ADJUST',
-  HEDGE = 'HEDGE'
+  HEDGE = 'HEDGE',
 }
 
 export enum OrderSide {
   BUY = 'BUY',
-  SELL = 'SELL'
+  SELL = 'SELL',
 }
 
 export enum ActionStatus {
   STAGED = 'STAGED',
   EXECUTED = 'EXECUTED',
   COMPLETED = 'COMPLETED',
-  CANCELED = 'CANCELED'
+  CANCELED = 'CANCELED',
 }
 
 export enum TradeStatus {
@@ -143,7 +138,7 @@ export enum TradeStatus {
   OPEN = 'OPEN',
   PARTIAL = 'PARTIAL',
   COMPLETED = 'COMPLETED',
-  CANCELED = 'CANCELED'
+  CANCELED = 'CANCELED',
 }
 
 export enum OrderType {
@@ -151,7 +146,7 @@ export enum OrderType {
   LIMIT = 'LIMIT',
   STOP = 'STOP',
   STOP_LIMIT = 'STOP_LIMIT',
-  TRAILING_STOP = 'TRAILING_STOP'
+  TRAILING_STOP = 'TRAILING_STOP',
 }
 
 export enum OrderClass {
@@ -159,22 +154,22 @@ export enum OrderClass {
   BRACKET = 'BRACKET',
   OCO = 'OCO',
   OSO = 'OSO',
-  OTO = 'OTO'
+  OTO = 'OTO',
 }
 
 export enum OptionType {
   CALL = 'CALL',
-  PUT = 'PUT'
+  PUT = 'PUT',
 }
 
 export enum OptionStyle {
   AMERICAN = 'AMERICAN',
-  EUROPEAN = 'EUROPEAN'
+  EUROPEAN = 'EUROPEAN',
 }
 
 export enum DeliverableType {
   CASH = 'CASH',
-  EQUITY = 'EQUITY'
+  EQUITY = 'EQUITY',
 }
 
 export enum OrderStatus {
@@ -195,7 +190,7 @@ export enum OrderStatus {
   STOPPED = 'STOPPED',
   REJECTED = 'REJECTED',
   SUSPENDED = 'SUSPENDED',
-  CALCULATED = 'CALCULATED'
+  CALCULATED = 'CALCULATED',
 }
 
 export enum TimeInForce {
@@ -204,35 +199,34 @@ export enum TimeInForce {
   OPG = 'OPG',
   CLS = 'CLS',
   IOC = 'IOC',
-  FOK = 'FOK'
+  FOK = 'FOK',
 }
 
 export enum AlertType {
   SUCCESS = 'SUCCESS',
   WARNING = 'WARNING',
   ERROR = 'ERROR',
-  INFO = 'INFO'
+  INFO = 'INFO',
 }
 
 export enum EventImportance {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH'
+  HIGH = 'HIGH',
 }
 
 export enum SubscriptionPlan {
   FREE = 'FREE',
   PRO = 'PRO',
-  BUSINESS = 'BUSINESS'
+  BUSINESS = 'BUSINESS',
 }
 
 export enum OpenaiModel {
   GPT_4O = 'GPT_4O',
   GPT_4O_MINI = 'GPT_4O_MINI',
   O1_PREVIEW = 'O1_PREVIEW',
-  O1_MINI = 'O1_MINI'
+  O1_MINI = 'O1_MINI',
 }
-
 
 // =====================
 // Interfaces
@@ -304,6 +298,7 @@ export interface AlpacaAccount {
 
 export interface Position {
   id: string;
+  symbol: string;
   assetId?: string;
   asset?: Asset;
   averageEntryPrice: number;

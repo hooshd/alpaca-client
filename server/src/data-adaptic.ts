@@ -5,7 +5,7 @@
 import { types } from 'adaptic-backend/server/index';
 import { adaptic as adapticUtils } from 'adaptic-utils';
 import { ProcessedAssetOverviewResponse } from './types';
-import { client } from './apollo-client';
+import { apolloClient } from './apollo-client';
 
 export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[]> => {
   try {
@@ -31,7 +31,7 @@ export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[
       userId
     `;
 
-    const accounts = (await client.query({
+    const accounts = (await apolloClient.query({
       query: adapticUtils.apollo.gql`
         query {
           alpacaAccounts (where: { marketOpen: {equals: true} }) {
