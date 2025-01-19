@@ -139,13 +139,15 @@ const AccountNavChart = () => {
             interval={period === '1D' ? 5 : 'preserveStartEnd'} // Show fewer ticks for 1D view
           />
           <YAxis 
-            domain={yAxisDomain}
+            domain={yAxisDomain as [number, number]}
             tickFormatter={(value) => formatCurrency(value)}
-            ticks={[yAxisDomain[0], (yAxisDomain[0] + yAxisDomain[1]) / 2, yAxisDomain[1]]}
           />
           <Tooltip 
             contentStyle={{ backgroundColor: '#fff', border: 'none', borderRadius: '8px' }} 
-            formatter={(value: number) => [formatCurrency(value, true), 'Equity']} // Show full format on hover
+            formatter={(value: string | number | (string | number)[]) => {
+              const numValue = Array.isArray(value) ? Number(value[0]) : Number(value);
+              return [formatCurrency(numValue, true), 'Equity'];
+            }}
           />
           <Line 
             type="monotone" 
