@@ -85,7 +85,7 @@ export const setupRoutes = (app: Express) => {
         console.log('Service not initialized, attempting to initialize...');
         const accounts = await fetchAllLiveAlpacaAccounts();
         if (accounts.length === 0) {
-          throw new Error('No accounts available in Google Sheet');
+          throw new Error('No accounts available from Adaptic');
         }
         await initializeAlpacaClient(accounts[0]);
       }

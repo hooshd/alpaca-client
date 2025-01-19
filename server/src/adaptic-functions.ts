@@ -2,8 +2,9 @@
  * Adaptic calls
  **********************************************************************************/
 
-import { types } from 'adaptic-backend/server/index';
+import adaptic, { types } from 'adaptic-backend';
 import { adaptic as adapticUtils } from 'adaptic-utils';
+import { ApolloClient, NormalizedCacheObject } from '@apollo/client';   
 import { ProcessedAssetOverviewResponse } from './types';
 import { apolloClient } from './apollo-client';
 
@@ -116,7 +117,7 @@ export async function fetchAndValidateAccounts(eventOnlyDana: boolean = false) {
   let accounts = await fetchAllLiveAlpacaAccounts();
 
   if (accounts.length === 0) {
-    const errorMessage = `Could not find any suitable accounts found on behalf of which to determine potential trades. Exiting...`;
+    const errorMessage = `Could not find any live accounts in Adaptic. Exiting...`;
     console.log(errorMessage);
     return { error: errorMessage, accounts: [] };
   }
@@ -129,3 +130,149 @@ export async function fetchAndValidateAccounts(eventOnlyDana: boolean = false) {
 
   return { accounts };
 }
+
+interface TradeQueryProps extends types.Trade {
+  sort?: {
+    field: keyof types.Trade;
+    order?: 'asc' | 'desc';
+  };
+  limit?: number;
+}
+
+adaptic.trade.findMany = async function (
+  props: TradeQueryProps,
+  clientToUse: ApolloClient<NormalizedCacheObject>
+) {
+  const selectionSet = `
+    id
+    assetId
+    qty
+    price
+    total
+    signal
+    summary
+    createdAt
+    updatedAt
+    status
+    asset {
+      id
+      symbol
+      name
+      exchange
+    }
+    actions {
+      id
+      sequence
+      tradeId
+      type
+      primary
+      status
+      order {
+        id
+        clientOrderId
+        qty
+        side
+        type
+        limitPrice
+        stopPrice
+        trailPercent
+        status
+        createdAt
+        updatedAt
+        filledQty
+        filledAvgPrice
+      }
+    }
+    `;
+
+  const FIND_MANY_TRADE = adapticUtils.apollo.gql`
+    query findManyTrade(
+      $where: TradeWhereInput!
+      $orderBy: [TradeOrderByWithRelationInput!]
+      $take: Int
+    ) {
+      trades(
+        where: $where
+        orderBy: $orderBy
+        take: $take
+      ) {
+        ${selectionSet}
+      }
+    }`;
+
+  const variables = {
+    where: {
+      id: props.id !== undefined ? { equals: props.id } : undefined,
+      alpacaAccountId: props.alpacaAccountId !== undefined 
+        ? { equals: props.alpacaAccountId }
+        : undefined,
+      createdAt: props.createdAt !== undefined
+        ? typeof props.createdAt === 'string'
+          ? { gte: props.createdAt }
+          : props.createdAt
+        : undefined,
+    },
+    orderBy: props.sort 
+      ? [{ [props.sort.field]: props.sort.order || 'desc' }]
+      : [{ createdAt: 'desc' }], // Default sort
+    take: props.limit || 10, // Default limit
+  };
+
+  try {
+    const response = await clientToUse.query({ query: FIND_MANY_TRADE, variables });
+    if (response.errors && response.errors.length > 0) 
+      throw new Error(response.errors[0].message);
+    return response.data?.trades ?? [];
+  } catch (error) {
+    if (error instanceof adapticUtils.apollo.ApolloError && 
+        error.message === 'No Trade object found') {
+      return null;
+    } else {
+      console.error('Error in findManyTrade:', error);
+      throw error;
+    }
+  }
+};
+
+export const fetchRecentTrades = async (
+  startTimeUtc: Date,
+  options?: {
+    alpacaAccountId?: string;
+    limit?: number;
+    sort?: {
+      field: keyof types.Trade;
+      order?: 'asc' | 'desc';
+    };
+  }
+): Promise<types.Trade[] | null> => {
+  const { alpacaAccountId, limit, sort } = options || {};
+  try {
+    const nowUtc = new Date();
+
+    adapticUtils.utils.logIfDebug(`Start time UTC: ${startTimeUtc.toISOString()}`);
+    adapticUtils.utils.logIfDebug(`Current time in UTC: ${nowUtc.toISOString()}`);
+
+    const trades = await adaptic.trade.findMany(
+      {
+        alpacaAccountId,
+        createdAt: {
+          gte: startTimeUtc.toISOString(),
+          lte: nowUtc.toISOString(),
+        },
+        limit,
+        sort,
+      } as unknown as TradeQueryProps,
+      apolloClient
+    );
+
+    if (trades && trades?.length > 0) {
+      adapticUtils.utils.logIfDebug(`Found ${trades?.length} recent trades`);
+      return trades;
+    }
+    adapticUtils.utils.logIfDebug(`No trades found. Response: ${JSON.stringify(trades)}`);
+    return null;
+  } catch (error) {
+    console.error('Error fetching recent trades:', error);
+    throw new Error('Failed to fetch trades from backend');
+  }
+};

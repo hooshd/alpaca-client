@@ -366,7 +366,7 @@ export const adapticTools: Tool[] = [
   {
     type: 'function',
     function: {
-      name: 'create_trade',
+      name: 'create_adaptic_trade',
       description: 'Create a trade object in the Adaptic backend',
       parameters: {
         type: 'object',
@@ -850,7 +850,7 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
           results.push(simplifiedData);
           break;
         }
-        case 'create_trade': {
+        case 'create_adaptic_trade': {
           const trade = await adaptic.trade.create({
             alpacaAccountId: params.alpacaAccountId,
             assetId: params.assetId,
