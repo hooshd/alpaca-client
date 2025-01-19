@@ -63,7 +63,12 @@ export class AlpacaClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Alpaca API error: ${response.statusText}. Details: ${errorText}`);
+      console.error(`Alpaca API error for ${endpoint}:`, {
+        status: response.status,
+        statusText: response.statusText,
+        details: errorText,
+      });
+      throw new Error(`Alpaca API error: ${response.status} ${response.statusText}. Details: ${errorText}`);
     }
 
     // Handle empty response
@@ -180,6 +185,8 @@ export class AlpacaClient {
       currency: params.currency || 'USD',
       page_token: params.page_token || '',
       sort: params.sort || 'asc',
+      ...(params.start && { start: params.start }),
+      ...(params.end && { end: params.end }),
     });
 
     const response = await this.fetch<{
@@ -199,11 +206,15 @@ export class AlpacaClient {
 
     const iterator: BarIterator = {
       async next() {
-        if (index >= bars.length) {
+        if (!bars || bars.length === 0 || index >= bars.length) {
           return { done: true };
         }
 
         const bar = bars[index++];
+        if (!bar) {
+          return { done: true };
+        }
+
         return {
           value: {
             ClosePrice: bar.c,

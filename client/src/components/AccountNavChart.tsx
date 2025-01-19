@@ -10,7 +10,7 @@ interface ChartData {
 const AccountNavChart = () => {
   const { refreshData, error } = useAlpaca();
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [period, setPeriod] = useState<string>('1M'); // Default period
+  const [period, setPeriod] = useState<string>('1D'); // Default period
 
   // Filter data points to 30-minute intervals for 1D view
   const filterDataPoints = (data: ChartData[]) => {
