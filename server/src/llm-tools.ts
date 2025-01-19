@@ -1,10 +1,9 @@
 import { Tool, ToolCall } from 'lumic-utility-functions';
 import { adaptic as adptc } from 'adaptic-utils';
 import { AlpacaClient } from './alpacaClient';
-import { Order, Position, Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData } from './types';
+import { Order, Position, Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData, AVNewsArticle } from './types';
 import adaptic, {types} from 'adaptic-backend';
 import { apolloClient } from './apollo-client';
-
 
 // Initialize alpaca client instance
 let alpacaClient: AlpacaClient | null = null;
@@ -383,8 +382,36 @@ export const adapticTools: Tool[] = [
   },
 ];
 
-// Combine Alpaca and Polygon tools
-export const allTools: Tool[] = [...alpacaTools, ...polygonTools];
+export const alphaVantageTools: Tool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'fetch_ticker_news',
+      description: 'Get the most recent news articles for a stock ticker',
+      parameters: {
+        type: 'object',
+        properties: {
+          symbol: {
+            type: 'string',
+            description: 'The stock ticker symbol',
+          },
+          start: {
+            type: 'string',
+            description: 'Optional ISO 8601 timestamp for start date. Defaults to 7 days ago.',
+          },
+          limit: {
+            type: 'number',
+            description: 'Optional maximum number of news articles to return. Defaults to 10.',
+          },
+        },
+        required: ['symbol'],
+      },
+    },
+  },
+];
+
+// Combine Alpaca, Polygon, and Alpha Vantage tools
+export const allTools: Tool[] = [...alpacaTools, ...polygonTools, ...alphaVantageTools];
 
 // Helper function to convert ISO 8601 to Unix milliseconds
 function convertISO8601TimeToUnixMilliseconds(t: string): number {
@@ -590,6 +617,12 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
               timestamp: Date.now()
             });
           }
+          break;
+        }
+        case 'fetch_ticker_news': {
+          let startDate = params.start ? new Date(params.start) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          const news = await adptc.av.fetchTickerNews(params.symbol, startDate, params.limit);
+          results.push(news);
           break;
         }
         default:
