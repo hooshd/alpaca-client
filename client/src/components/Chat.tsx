@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LoadingBubble from './LoadingBubble';
 
 interface Message {
   text: string;
@@ -123,6 +124,7 @@ const Chat: React.FC = () => {
               </div>
             </div>
           ))}
+          {isLoading && <LoadingBubble />}
         </div>
         <div className="chat-input-container">
           <form onSubmit={handleSubmit} className="chat-form">
