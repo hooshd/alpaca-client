@@ -12,6 +12,48 @@ interface Message {
   };
 }
 
+const interpretMarkdown = (text: string): React.ReactNode[] => {
+  // Split text into lines while preserving empty lines
+  const lines = text.split(/\r?\n/);
+  
+  // Process each line
+  return lines.map((line, index) => {
+    // Headers
+    if (line.startsWith('# ')) {
+      return <h1 key={index} className="text-2xl font-bold">{line.slice(2)}</h1>;
+    }
+    if (line.startsWith('## ')) {
+      return <h2 key={index} className="text-xl font-bold">{line.slice(3)}</h2>;
+    }
+    if (line.startsWith('### ')) {
+      return <h3 key={index} className="text-lg font-bold">{line.slice(4)}</h3>;
+    }
+
+    // Process inline markdown (bold and italic)
+    let content = line;
+    
+    // Bold (using **text**)
+    content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Italic (using *text*)
+    content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // Convert the processed string to React elements
+    if (content.includes('<')) {
+      // Use dangerouslySetInnerHTML only for lines that actually have HTML tags
+      return <p key={index} dangerouslySetInnerHTML={{ __html: content }} />;
+    }
+
+    // Return empty lines as line breaks
+    if (content.trim() === '') {
+      return <br key={index} />;
+    }
+
+    // Return regular text
+    return <p key={index}>{content}</p>;
+  });
+};
+
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -115,7 +157,9 @@ const Chat: React.FC = () => {
                     : 'bg-gray-200 text-gray-800'
                 }`}
               >
-                <div>{message.text}</div>
+                <div className="whitespace-pre-wrap">
+                  {interpretMarkdown(message.text)}
+                </div>
                 {!message.isUser && message.usage && (
                   <div className="mt-2 text-xs italic text-gray-600">
                     {`${message.usage.prompt_tokens} prompt + ${message.usage.completion_tokens} completion tokens | ${message.usage.model} | ${formatCost(message.usage.cost)}`}

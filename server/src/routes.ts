@@ -6,9 +6,9 @@ import { lumic } from 'lumic-utility-functions';
 import { ChatService } from './chatClient';
 import { types } from 'adaptic-backend';
 import { fetchAllLiveAlpacaAccounts } from './adaptic-functions';
+import { setCurrentAccount } from './accountState';
 
 export const setupRoutes = (app: Express) => {
-  let currentAccount: types.AlpacaAccount | null = null;
   let alpaca: AlpacaClient | null = null;
   let isInitialized = false;
   let chatService: ChatService | null = null;
@@ -46,7 +46,7 @@ export const setupRoutes = (app: Express) => {
 
         validateCredentials(account);
 
-        currentAccount = account;
+        setCurrentAccount(account);
         alpaca = new AlpacaClient({
           keyId: account.APIKey,
           secretKey: account.APISecret,
@@ -67,7 +67,6 @@ export const setupRoutes = (app: Express) => {
       } catch (error) {
         isInitialized = false;
         alpaca = null;
-        currentAccount = null;
         chatService = null;
         console.error('Failed to initialize Alpaca client:', error);
         throw error;
@@ -108,15 +107,7 @@ export const setupRoutes = (app: Express) => {
       console.log(`Found ${accounts.length} accounts`);
 
       // Only initialize if we're not already initialized or if the current account needs updating
-      if (currentAccount) {
-        const updatedAccount = accounts.find((acc) => acc.user?.name === currentAccount?.user?.name);
-        if (updatedAccount && 
-            (updatedAccount.APIKey !== currentAccount?.APIKey || 
-             updatedAccount.APISecret !== currentAccount?.APISecret ||
-             updatedAccount.type !== currentAccount?.type)) {
-          await initializeAlpacaClient(updatedAccount);
-        }
-      } else if (accounts.length > 0 && !isInitialized) {
+      if (accounts.length > 0 && !isInitialized) {
         await initializeAlpacaClient(accounts[0]);
       }
 

@@ -4,6 +4,7 @@ import { AlpacaClient } from './alpacaClient';
 import { Order, Position, Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData, AVNewsArticle } from './types';
 import adaptic, {types} from 'adaptic-backend';
 import { apolloClient } from './apollo-client';
+import { getCurrentAccount } from './accountState';
 import { 
   EMAData, 
   MACDData, 
@@ -366,6 +367,18 @@ export const adapticTools: Tool[] = [
   {
     type: 'function',
     function: {
+      name: 'get_adaptic_account_info',
+      description: 'Get information about the currently active Adaptic account, including email, Adaptic account id, and Alpaca account id',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: [],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'create_adaptic_trade',
       description: 'Create a trade object in the Adaptic backend',
       parameters: {
@@ -668,7 +681,7 @@ export const taTools: Tool[] = [
 ];
 
 // Combine Alpaca, Polygon, and Alpha Vantage tools
-export const allTools: Tool[] = [...alpacaTools, ...polygonTools, ...alphaVantageTools, ...taTools];
+export const allTools: Tool[] = [...alpacaTools, ...polygonTools, ...alphaVantageTools, ...adapticTools];
 
 // Helper function to convert ISO 8601 to Unix milliseconds
 function convertISO8601TimeToUnixMilliseconds(t: string): number {
@@ -872,6 +885,24 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
               success: true,
               message: `Trade created successfully with ID: ${trade.id}`,
               timestamp: Date.now()
+            });
+          }
+          break;
+        }
+        case 'get_adaptic_account_info': {
+          const currentAccount = getCurrentAccount();
+          if (!currentAccount) {
+            results.push({
+              success: false,
+              message: 'No active account found',
+              timestamp: Date.now(),
+            });
+          } else {
+            results.push({
+              success: true,
+              message: 'Successfully retrieved Adaptic account info',
+              timestamp: Date.now(),
+              data: currentAccount,
             });
           }
           break;
