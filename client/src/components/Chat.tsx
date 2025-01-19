@@ -12,7 +12,12 @@ interface Message {
 }
 
 const Chat: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      text: "Welcome to Adaptic. Ask anything about your account, market data, or positions, trades, or orders.",
+      isUser: false
+    }
+  ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -93,56 +98,59 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
-          >
+    <div className="flex flex-col mb-8">
+      <h2 className="text-xl font-medium text-gray-700 mb-4">Chat</h2>
+      <div className="flex flex-col h-[500px] bg-gray-50 rounded-lg">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message, index) => (
             <div
-              className={`max-w-[70%] rounded-lg p-3 ${
-                message.isUser
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-gray-800'
-              }`}
+              key={index}
+              className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
             >
-              <div>{message.text}</div>
-              {!message.isUser && message.usage && (
-                <div className="mt-2 text-xs italic text-gray-600">
-                  {`${message.usage.prompt_tokens} prompt + ${message.usage.completion_tokens} completion tokens | ${message.usage.model} | ${formatCost(message.usage.cost)}`}
-                </div>
-              )}
+              <div
+                className={`max-w-[70%] rounded-lg p-3 ${
+                  message.isUser
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 text-gray-800'
+                }`}
+              >
+                <div>{message.text}</div>
+                {!message.isUser && message.usage && (
+                  <div className="mt-2 text-xs italic text-gray-600">
+                    {`${message.usage.prompt_tokens} prompt + ${message.usage.completion_tokens} completion tokens | ${message.usage.model} | ${formatCost(message.usage.cost)}`}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-      <div className="chat-input-container">
-        <form onSubmit={handleSubmit} className="chat-form">
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type your message..."
-            disabled={isLoading}
-            className="chat-input"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !inputText.trim()}
-            className="chat-submit"
-          >
-            Send
-          </button>
-          <button
-            type="button"
-            onClick={handleReset}
-            className="chat-reset"
-            disabled={isLoading || messages.length === 0}
-          >
-            Reset
-          </button>
-        </form>
+          ))}
+        </div>
+        <div className="chat-input-container">
+          <form onSubmit={handleSubmit} className="chat-form">
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Type your message..."
+              disabled={isLoading}
+              className="chat-input"
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !inputText.trim()}
+              className="chat-submit"
+            >
+              Send
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="chat-reset"
+              disabled={isLoading || messages.length === 1}
+            >
+              Reset
+            </button>
+          </form>
+        </div>
       </div>
       <style>
         {`

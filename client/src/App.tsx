@@ -5,7 +5,6 @@ import { MarketHoursCalculator } from './utils/marketTime';
 import AccountInfo from './components/AccountInfo';
 import { BalanceSection } from './components/BalanceSection';
 import MarketTime from './components/MarketTime';
-import CreateOrder from './components/CreateOrder';
 import Orders from './components/Orders';
 import Trades from './components/Trades';
 import AccountNavChart from './components/AccountNavChart';
@@ -58,9 +57,6 @@ function App() {
 
           {/* Chat Section */}
           <Chat />
-
-          {/* Create Order Section */}
-          <CreateOrder onOrderSubmit={submitOrder} />
 
           {/* Close All Positions Button */}
           <div className="mb-8">

@@ -56,12 +56,6 @@ export const AccountInfo: React.FC = () => {
           </>
         )}
 
-        {accountInfo && (
-          <>
-            <div className="font-medium">Alapca account number:</div>
-            <div className="sm:text-right">{accountInfo.account_number}</div>
-          </>
-        )}
       </div>
     </section>
   );
