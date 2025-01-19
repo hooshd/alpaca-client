@@ -28,18 +28,6 @@ export interface AccountInfo {
   equity: string;
 }
 
-export interface SheetAccount {
-  display_name: string;
-  name: string;
-  type: string;
-  alpacaApiKey: string;
-  alpacaApiSecret: string;
-  email: string;
-  openAiApiKey: string;
-  openAiModel: string;
-  adapticId: string;
-}
-
 export interface Order {
   id: string;
   client_order_id?: string;

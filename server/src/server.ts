@@ -4,7 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { setupRoutes } from './routes';
 import { errorHandler } from './errorHandler';
-import { getAccounts } from './sheetsClient';
+import { fetchAllLiveAlpacaAccounts } from './adaptic-functions';
 
 // Load environment variables
 dotenv.config();
@@ -23,7 +23,7 @@ const startServer = async () => {
     const { initializeAlpacaClient } = setupRoutes(app);
 
     // Pre-fetch accounts and trigger initial initialization
-    const accounts = await getAccounts();
+    const accounts = await fetchAllLiveAlpacaAccounts();
     console.log(`Pre-initialization: Found ${accounts.length} accounts`);
     
     if (accounts.length > 0) {

@@ -2,19 +2,20 @@ import { Express, Request, Response } from 'express';
 import { AlpacaClient } from './alpacaClient';
 import { fetchLastTrade } from './polygonClient';
 import { Order, Position, Asset, AccountInfo } from './types';
-import { getAccounts, SheetAccount } from './sheetsClient';
 import { lumic } from 'lumic-utility-functions';
 import { ChatService } from './chatClient';
+import { types } from 'adaptic-backend';
+import { fetchAllLiveAlpacaAccounts } from './adaptic-functions';
 
 export const setupRoutes = (app: Express) => {
-  let currentAccount: SheetAccount | null = null;
+  let currentAccount: types.AlpacaAccount | null = null;
   let alpaca: AlpacaClient | null = null;
   let isInitialized = false;
   let chatService: ChatService | null = null;
   let initializationPromise: Promise<void> | null = null;
 
-  const validateCredentials = (account: SheetAccount) => {
-    if (!account.alpacaApiKey || !account.alpacaApiSecret) {
+  const validateCredentials = (account: types.AlpacaAccount) => {
+    if (!account.APIKey || !account.APISecret) {
       throw new Error('Invalid account credentials: API key and secret are required');
     }
     if (!account.type) {
@@ -25,7 +26,7 @@ export const setupRoutes = (app: Express) => {
     }
   };
 
-  const initializeAlpacaClient = async (account: SheetAccount): Promise<void> => {
+  const initializeAlpacaClient = async (account: types.AlpacaAccount): Promise<void> => {
     // If there's already an initialization in progress, wait for it
     if (initializationPromise) {
       try {
@@ -40,15 +41,15 @@ export const setupRoutes = (app: Express) => {
     // Create new initialization promise
     initializationPromise = (async () => {
       try {
-        console.log(`Initializing Alpaca client for account: ${account.display_name}`);
-        console.log(`Account type from sheet: ${account.type}`);
+        console.log(`Initializing Alpaca client for account: ${account.user?.name}`);
+        console.log(`Account type: ${account.type}`);
 
         validateCredentials(account);
 
         currentAccount = account;
         alpaca = new AlpacaClient({
-          keyId: account.alpacaApiKey,
-          secretKey: account.alpacaApiSecret,
+          keyId: account.APIKey,
+          secretKey: account.APISecret,
           isPaper: account.type.toLowerCase() === 'paper',
         });
 
@@ -82,7 +83,7 @@ export const setupRoutes = (app: Express) => {
     try {
       if (!isInitialized) {
         console.log('Service not initialized, attempting to initialize...');
-        const accounts = await getAccounts();
+        const accounts = await fetchAllLiveAlpacaAccounts();
         if (accounts.length === 0) {
           throw new Error('No accounts available in Google Sheet');
         }
@@ -99,20 +100,20 @@ export const setupRoutes = (app: Express) => {
     }
   };
 
-  // Refresh config from Google Sheets
+  // Refresh accounts
   app.post('/api/config/refresh', async (_req: Request, res: Response) => {
     try {
-      console.log('Refreshing config from Google Sheet...');
-      const accounts = await getAccounts();
+      console.log('Refreshing accounts from Adaptic...');
+      const accounts = await fetchAllLiveAlpacaAccounts();
       console.log(`Found ${accounts.length} accounts`);
 
       // Only initialize if we're not already initialized or if the current account needs updating
       if (currentAccount) {
-        const updatedAccount = accounts.find((acc) => acc.name === currentAccount?.name);
+        const updatedAccount = accounts.find((acc) => acc.user?.name === currentAccount?.user?.name);
         if (updatedAccount && 
-            (updatedAccount.alpacaApiKey !== currentAccount.alpacaApiKey || 
-             updatedAccount.alpacaApiSecret !== currentAccount.alpacaApiSecret ||
-             updatedAccount.type !== currentAccount.type)) {
+            (updatedAccount.APIKey !== currentAccount?.APIKey || 
+             updatedAccount.APISecret !== currentAccount?.APISecret ||
+             updatedAccount.type !== currentAccount?.type)) {
           await initializeAlpacaClient(updatedAccount);
         }
       } else if (accounts.length > 0 && !isInitialized) {
@@ -132,7 +133,7 @@ export const setupRoutes = (app: Express) => {
     }
   });
 
-  // Get available accounts from Google Sheets
+  // Get available accounts from Adaptic
   app.get('/api/accounts', async (_req: Request, res: Response) => {
     try {
       // Use the refresh endpoint internally
@@ -158,8 +159,8 @@ export const setupRoutes = (app: Express) => {
   // Switch account
   app.post('/api/account/switch', async (req: Request, res: Response) => {
     try {
-      const account = req.body as SheetAccount;
-      console.log(`Switching to account: ${account.display_name}`);
+      const account = req.body as types.AlpacaAccount;
+      console.log(`Switching to account: ${account.user?.name}`);
       await initializeAlpacaClient(account);
       res.json({ message: 'Account switched successfully' });
     } catch (error: any) {

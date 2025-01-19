@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AccountInfo, Order, Position, SheetAccount } from '../types';
+import { AccountInfo, Order, Position } from '../types';
+import { types } from 'adaptic-backend/server/index';
 
 interface AlpacaContextType {
   accountInfo: AccountInfo | null;
@@ -7,14 +8,14 @@ interface AlpacaContextType {
   positions: Position[];
   isLoading: boolean;
   error: string | null;
-  availableAccounts: SheetAccount[];
-  selectedAccount: SheetAccount | null;
+  availableAccounts: types.AlpacaAccount[];
+  selectedAccount: types.AlpacaAccount | null;
   refreshData: () => Promise<void>;
   refreshConfig: () => Promise<void>;
   submitOrder: (orderData: any) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
   patchOrder: (orderId: string, data: { trail?: string }) => Promise<void>;
-  switchAccount: (account: SheetAccount) => Promise<void>;
+  switchAccount: (account: types.AlpacaAccount) => Promise<void>;
 }
 
 const AlpacaContext = createContext<AlpacaContextType | undefined>(undefined);
@@ -37,13 +38,13 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [availableAccounts, setAvailableAccounts] = useState<SheetAccount[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState<SheetAccount | null>(null);
+  const [availableAccounts, setAvailableAccounts] = useState<types.AlpacaAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<types.AlpacaAccount | null>(null);
 
   const refreshConfig = async () => {
     try {
       const response = await fetch('/api/config/refresh', {
-        method: 'POST'
+        method: 'POST',
       });
       if (!response.ok) throw new Error('Failed to refresh config');
       const data = await response.json();
@@ -110,11 +111,7 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
     setIsLoading(true);
     setError(null);
     try {
-      await Promise.all([
-        fetchAccountInfo(),
-        fetchOrders(),
-        fetchPositions()
-      ]);
+      await Promise.all([fetchAccountInfo(), fetchOrders(), fetchPositions()]);
     } finally {
       setIsLoading(false);
     }
@@ -127,11 +124,11 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify(orderData),
       });
-      
+
       if (!response.ok) throw new Error('Failed to submit order');
-      
+
       await refreshData();
     } catch (err) {
       throw err;
@@ -141,11 +138,11 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
   const cancelOrder = async (orderId: string) => {
     try {
       const response = await fetch(`/api/orders/${orderId}/cancel`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
-      
+
       if (!response.ok) throw new Error('Failed to cancel order');
-      
+
       await refreshData();
     } catch (err) {
       throw err;
@@ -159,22 +156,22 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) throw new Error('Failed to patch order');
-      
+
       await refreshData();
     } catch (err) {
       throw err;
     }
   };
 
-  const switchAccount = async (account: SheetAccount) => {
+  const switchAccount = async (account: types.AlpacaAccount) => {
     try {
       // Refresh config first to ensure we have the latest account data
       const accounts = await refreshConfig();
-      const updatedAccount = accounts.find((acc: SheetAccount) => acc.name === account.name);
+      const updatedAccount = accounts.find((acc: types.AlpacaAccount) => acc.user?.email === account.user?.email);
       if (!updatedAccount) {
         throw new Error('Account no longer exists in config');
       }
@@ -184,11 +181,11 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updatedAccount)
+        body: JSON.stringify(updatedAccount),
       });
-      
+
       if (!response.ok) throw new Error('Failed to switch account');
-      
+
       setSelectedAccount(updatedAccount);
       await refreshData();
     } catch (err) {
@@ -206,10 +203,10 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
     if (selectedAccount) {
       refreshData();
     }
-    
+
     // Refresh data every minute
     const interval = setInterval(refreshData, 60000);
-    
+
     return () => clearInterval(interval);
   }, [selectedAccount]);
 
@@ -226,14 +223,10 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
     submitOrder,
     cancelOrder,
     patchOrder,
-    switchAccount
+    switchAccount,
   };
 
-  return (
-    <AlpacaContext.Provider value={value}>
-      {children}
-    </AlpacaContext.Provider>
-  );
+  return <AlpacaContext.Provider value={value}>{children}</AlpacaContext.Provider>;
 };
 
 export default AlpacaProvider;

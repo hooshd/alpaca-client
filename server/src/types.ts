@@ -1,3 +1,6 @@
+import { types } from 'adaptic-backend/server/index';
+export type AlpacaAccount = types.AlpacaAccount;
+
 export interface Position {
     symbol: string;
     qty: number;
