@@ -3,9 +3,8 @@
  **********************************************************************************/
 
 import adaptic, { types } from 'adaptic-backend';
-import { adaptic as adapticUtils } from 'adaptic-utils';
+import { adaptic as adapticUtils, AssetOverviewResponse } from 'adaptic-utils';
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client';   
-import { ProcessedAssetOverviewResponse } from './types';
 import { apolloClient } from './apollo-client';
 
 export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[]> => {
@@ -59,7 +58,7 @@ interface AdapticAssetResponse {
 }
 
 // Get Asset Overview from Adaptic
-export const getAssetOverview = async (symbol: string): Promise<ProcessedAssetOverviewResponse> => {
+export const getAssetOverview = async (symbol: string): Promise<AssetOverviewResponse> => {
   if (!symbol) {
     return {
       asset: null,

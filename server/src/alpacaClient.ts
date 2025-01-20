@@ -1,4 +1,6 @@
-import { AccountInfo, Position, Order, Asset } from './types';
+import { AccountInfo, Asset } from './types';
+import { Position, Order } from 'adaptic-utils';
+import { adaptic as adptc} from 'adaptic-utils';
 
 interface AlpacaClientConfig {
   keyId: string;
@@ -162,79 +164,6 @@ export class AlpacaClient {
     return this.fetch<Asset[]>(`/v2/assets?${queryParams}`);
   }
 
-  async getBarsV2(params: {
-    symbols: string;
-    timeframe: string;
-    start?: string;
-    end?: string;
-    limit?: number;
-    adjustment?: string;
-    asof?: string;
-    feed?: string;
-    currency?: string;
-    page_token?: string;
-    sort?: string;
-  }): Promise<BarIterator> {
-    const queryParams = new URLSearchParams({
-      symbols: params.symbols,
-      timeframe: params.timeframe,
-      limit: (params.limit || 1000).toString(),
-      adjustment: params.adjustment || 'raw',
-      asof: params.asof || new Date().toISOString().split('T')[0],
-      feed: params.feed || 'sip',
-      currency: params.currency || 'USD',
-      page_token: params.page_token || '',
-      sort: params.sort || 'asc',
-      ...(params.start && { start: params.start }),
-      ...(params.end && { end: params.end }),
-    });
-
-    const response = await this.fetch<{
-      bars: Array<{
-        t: string;
-        o: number;
-        h: number;
-        l: number;
-        c: number;
-        v: number;
-      }>;
-      next_page_token?: string;
-    }>(`/v2/stocks/bars?${queryParams}`, {}, true);
-
-    let index = 0;
-    const bars = response?.bars || [];
-
-    const iterator: BarIterator = {
-      async next() {
-        if (!bars || bars.length === 0 || index >= bars.length) {
-          return { done: true };
-        }
-
-        const bar = bars[index++];
-        if (!bar) {
-          return { done: true };
-        }
-
-        return {
-          value: {
-            ClosePrice: bar.c,
-            OpenPrice: bar.o,
-            HighPrice: bar.h,
-            LowPrice: bar.l,
-            Volume: bar.v,
-            Timestamp: new Date(bar.t),
-          },
-          done: false,
-        };
-      },
-      [Symbol.asyncIterator]() {
-        return this;
-      },
-    };
-
-    return iterator;
-  }
-
   async getAccountPortfolioHistory(params: { period: string; timeframe: string; intraday_reporting: string }) {
     // Validate and adjust timeframe based on period
     const periodTimeframes: { [key: string]: string[] } = {
@@ -264,14 +193,5 @@ export class AlpacaClient {
     });
 
     return this.fetch(`/v2/account/portfolio/history?${queryParams}`);
-  }
-
-  async getLatestPrice(symbols: string, feed: string = 'sip', currency: string = 'USD') {
-    const queryParams = new URLSearchParams({
-      symbols,
-      feed,
-      currency,
-    });
-    return this.fetch(`/v2/stocks/bars/latest?${queryParams}`, {}, true);
   }
 }

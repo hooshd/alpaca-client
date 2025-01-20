@@ -1,7 +1,7 @@
 import { Tool, ToolCall } from 'lumic-utility-functions';
-import { adaptic as adptc } from 'adaptic-utils';
+import { adaptic as adptc, Order, Position } from 'adaptic-utils';
 import { AlpacaClient } from './alpacaClient';
-import { Order, Position, Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData, AVNewsArticle } from './types';
+import { Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData } from './types';
 import adaptic, {types} from 'adaptic-backend';
 import { apolloClient } from './apollo-client';
 import { getCurrentAccount } from './accountState';
@@ -318,41 +318,7 @@ export const alpacaTools: Tool[] = [
         required: ['period', 'timeframe'],
       },
     },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'get_bars',
-      description: 'Get historical price bars for a symbol',
-      parameters: {
-        type: 'object',
-        properties: {
-          symbols: {
-            type: 'string',
-            description: 'Stock symbol(s) to get data for',
-          },
-          timeframe: {
-            type: 'string',
-            description: 'Time interval for the bars',
-            enum: ['1Min', '5Min', '15Min', '30Min', '1H', '1D', 'week', 'month'],
-          },
-          start: {
-            type: 'string',
-            description: 'Start time in ISO 8601 format',
-          },
-          end: {
-            type: 'string',
-            description: 'End time in ISO 8601 format',
-          },
-          limit: {
-            type: 'number',
-            description: 'Maximum number of bars to return',
-          },
-        },
-        required: ['symbols', 'timeframe'],
-      },
-    },
-  },
+  }
 ];
 
 export const adapticTools: Tool[] = [
@@ -829,21 +795,6 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
             intraday_reporting: 'market_hours',
           });
           if (history) results.push(history as any);
-          break;
-        }
-        case 'get_bars': {
-          const bars = await alpacaClient.getBarsV2({
-            symbols: params.symbols,
-            timeframe: params.timeframe,
-            start: params.start,
-            end: params.end,
-            limit: params.limit,
-          });
-          const allBars = [];
-          for await (const bar of bars) {
-            allBars.push(bar);
-          }
-          results.push(allBars as any[]);
           break;
         }
         // Polygon tools

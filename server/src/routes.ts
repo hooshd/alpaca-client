@@ -1,8 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { AlpacaClient } from './alpacaClient';
-import { fetchLastTrade } from './polygonClient';
-import { Order, Position, Asset, AccountInfo } from './types';
-import { lumic } from 'lumic-utility-functions';
+import { Asset, AccountInfo } from './types';
+import { Position, Order, adaptic as adptc } from 'adaptic-utils';
 import { ChatService } from './chatClient';
 import { types } from 'adaptic-backend';
 import { fetchAllLiveAlpacaAccounts } from './adaptic-functions';
