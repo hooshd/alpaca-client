@@ -410,18 +410,14 @@ export const adapticTools: Tool[] = [
   {
     type: 'function',
     function: {
-      name: 'fetch_recent_trades',
-      description: 'Fetch recent trades from a specified start time',
+      name: 'fetch_recent_adaptic_trades',
+      description: 'Fetch recent Adaptic trade objects (containing actions and orders) from a specified start time',
       parameters: {
         type: 'object',
         properties: {
           start_time: {
             type: 'string',
             description: 'ISO 8601 timestamp for the start time in UTC',
-          },
-          alpaca_account_id: {
-            type: 'string',
-            description: 'Optional Alpaca account ID to filter trades',
           },
           limit: {
             type: 'number',
@@ -936,19 +932,19 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
           }
           break;
         }
-        case 'fetch_recent_trades': {
+        case 'fetch_recent_adaptic_trades': {
           const currentAccount = getCurrentAccount();
           if (!currentAccount) {
             results.push({
               success: false,
-              message: 'No active Adaptic account found',
+              message: 'No active Alpaca account found',
               timestamp: Date.now(),
             });
             break;
           }
 
           const trades = await fetchRecentTrades(new Date(params.start_time), {
-            alpacaAccountId: params.alpaca_account_id || currentAccount.id,
+            alpacaAccountId: currentAccount.id,
             limit: params.limit,
             sort: params.sort_field
               ? {
