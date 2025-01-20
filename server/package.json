@@ -2,14 +2,15 @@
   "name": "alpaca-server",
   "version": "1.0.0",
   "scripts": {
-    "start": "node dist/server.js",
-    "dev": "ts-node src/server.ts",
+    "start": "tsc && node dist/server.js",
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "dev": "tsc -w && nodemon dist/server.js",
+    "test": "ts-node src/test.ts"
   },
   "dependencies": {
     "adaptic-backend": "^1.0.267",
-    "adaptic-utils": "^0.0.149",
+    "adaptic-utils": "^0.0.150",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

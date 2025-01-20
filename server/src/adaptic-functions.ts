@@ -5,7 +5,7 @@
 import adaptic, { types } from 'adaptic-backend';
 import { adaptic as adapticUtils, AssetOverviewResponse } from 'adaptic-utils';
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client';   
-import { apolloClient } from './apollo-client';
+import { sharedApolloClient } from './apollo-client';
 
 export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[]> => {
   try {
@@ -31,7 +31,7 @@ export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[
       userId
     `;
 
-    const accounts = (await apolloClient.query({
+    const accounts = (await sharedApolloClient.query({
       query: adapticUtils.apollo.gql`
         query {
           alpacaAccounts (where: { marketOpen: {equals: true} }) {
@@ -261,7 +261,7 @@ export const fetchRecentTrades = async (
         limit,
         sort,
       } as unknown as TradeQueryProps,
-      apolloClient
+      sharedApolloClient
     );
 
     if (trades && trades?.length > 0) {

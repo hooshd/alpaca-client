@@ -379,7 +379,7 @@ export const setupRoutes = (app: Express) => {
     try {
       if (!alpaca) throw new Error('Alpaca client not initialized');
       const symbol = req.query.symbol as string;
-      const latestPrice = await adptc.polygon.fetchLastTrade(symbol);
+      const latestPrice = await adptc.polygon.fetchLastTrade(symbol, { apiKey: process.env.POLYGON_API_KEY });
       res.json(latestPrice);
     } catch (error: any) {
       console.error('Error fetching latest price:', error);

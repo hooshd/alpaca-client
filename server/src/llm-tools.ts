@@ -2,10 +2,11 @@ import { Tool, ToolCall } from 'lumic-utility-functions';
 import { adaptic as adptc, Order, Position } from 'adaptic-utils';
 import { AlpacaClient } from './alpacaClient';
 import { Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData } from './types';
-import adaptic, {types} from 'adaptic-backend';
-import { apolloClient } from './apollo-client';
+import adaptic, { types } from 'adaptic-backend';
+import { sharedApolloClient } from './apollo-client';
 import { getCurrentAccount } from './accountState';
 import { fetchRecentTrades } from './adaptic-functions';
+import 'dotenv/config';
 
 // Initialize alpaca client instance
 let alpacaClient: AlpacaClient | null = null;
@@ -318,7 +319,7 @@ export const alpacaTools: Tool[] = [
         required: ['period', 'timeframe'],
       },
     },
-  }
+  },
 ];
 
 export const adapticTools: Tool[] = [
@@ -326,7 +327,8 @@ export const adapticTools: Tool[] = [
     type: 'function',
     function: {
       name: 'get_adaptic_account_info',
-      description: 'Get information about the currently active Adaptic account, including email, Adaptic account id, and Alpaca account id',
+      description:
+        'Get information about the currently active Adaptic account, including email, Adaptic account id, and Alpaca account id',
       parameters: {
         type: 'object',
         properties: {},
@@ -347,16 +349,61 @@ export const adapticTools: Tool[] = [
           qty: { type: 'number', description: 'Quantity of the trade' },
           price: { type: 'number', description: 'Price of the trade' },
           total: { type: 'number', description: 'Total value of the trade (qty * price)' },
-          optionType: { type: 'string', enum: ['CALL', 'PUT'], description: 'Type of option if this is an options trade', optional: true },
-          signal: { type: 'string', enum: ['PRICE_ACTION', 'MOVING_AVERAGE_CROSSOVER', 'MACD_CROSSOVER', 'BREAKOUT_ABOVE_RESISTANCE', 'BREAKDOWN_BELOW_SUPPORT', 'NO_SIGNAL'], description: 'Signal that triggered the trade' },
-          strategy: { type: 'string', enum: ['TECHNICAL_ANALYSIS', 'TREND_FOLLOWING', 'MEAN_REVERSION', 'MOMENTUM_STRATEGY', 'NEWS_BASED_STRATEGY', 'SENTIMENT_ANALYSIS', 'BREAKOUT_STRATEGY', 'NO_STRATEGY'], description: 'Trading strategy used' },
+          optionType: {
+            type: 'string',
+            enum: ['CALL', 'PUT'],
+            description: 'Type of option if this is an options trade',
+            optional: true,
+          },
+          signal: {
+            type: 'string',
+            enum: [
+              'PRICE_ACTION',
+              'MOVING_AVERAGE_CROSSOVER',
+              'MACD_CROSSOVER',
+              'BREAKOUT_ABOVE_RESISTANCE',
+              'BREAKDOWN_BELOW_SUPPORT',
+              'NO_SIGNAL',
+            ],
+            description: 'Signal that triggered the trade',
+          },
+          strategy: {
+            type: 'string',
+            enum: [
+              'TECHNICAL_ANALYSIS',
+              'TREND_FOLLOWING',
+              'MEAN_REVERSION',
+              'MOMENTUM_STRATEGY',
+              'NEWS_BASED_STRATEGY',
+              'SENTIMENT_ANALYSIS',
+              'BREAKOUT_STRATEGY',
+              'NO_STRATEGY',
+            ],
+            description: 'Trading strategy used',
+          },
           analysis: { type: 'string', description: 'Detailed analysis explaining the trade' },
           summary: { type: 'string', description: 'Brief summary of the trade' },
           confidence: { type: 'number', description: 'Confidence level in the trade (0-100)' },
           timestamp: { type: 'string', description: 'ISO timestamp when the trade was executed' },
-          status: { type: 'string', enum: ['PENDING', 'EXECUTED', 'CANCELED', 'FAILED'], description: 'Current status of the trade' }
+          status: {
+            type: 'string',
+            enum: ['PENDING', 'EXECUTED', 'CANCELED', 'FAILED'],
+            description: 'Current status of the trade',
+          },
         },
-        required: ['alpacaAccountId', 'qty', 'price', 'total', 'signal', 'strategy', 'analysis', 'summary', 'confidence', 'timestamp', 'status']
+        required: [
+          'alpacaAccountId',
+          'qty',
+          'price',
+          'total',
+          'signal',
+          'strategy',
+          'analysis',
+          'summary',
+          'confidence',
+          'timestamp',
+          'status',
+        ],
       },
     },
   },
@@ -804,12 +851,14 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
           break;
         }
         case 'fetch_ticker_info': {
-          const tickerInfo = await adptc.polygon.fetchTickerInfo(params.symbol);
+          const tickerInfo = await adptc.polygon.fetchTickerInfo(params.symbol, {
+            apiKey: process.env.POLYGON_API_KEY,
+          });
           results.push(tickerInfo as any);
           break;
         }
         case 'fetch_last_trade': {
-          const lastTrade = await adptc.polygon.fetchLastTrade(params.symbol);
+          const lastTrade = await adptc.polygon.fetchLastTrade(params.symbol, { apiKey: process.env.POLYGON_API_KEY });
           results.push(lastTrade as unknown as PolygonQuote);
           break;
         }
@@ -820,7 +869,7 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
           if (typeof params.end === 'string') {
             params.end = convertISO8601TimeToUnixMilliseconds(params.end);
           }
-          const priceData = await adptc.polygon.fetchPrices(params);
+          const priceData = await adptc.polygon.fetchPrices(params, { apiKey: process.env.POLYGON_API_KEY });
           results.push(priceData as unknown as PolygonPriceData[]);
           break;
         }
@@ -831,7 +880,7 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
           if (typeof params.end === 'string') {
             params.end = convertISO8601TimeToUnixMilliseconds(params.end);
           }
-          const priceData = await adptc.polygon.fetchPrices(params);
+          const priceData = await adptc.polygon.fetchPrices(params, { apiKey: process.env.POLYGON_API_KEY });
           const simplifiedData: SimplifiedPriceData[] = (priceData as unknown as PolygonPriceData[]).map((p) => ({
             date: p.date,
             close: p.close,
@@ -841,27 +890,30 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
           break;
         }
         case 'create_adaptic_trade': {
-          const trade = await adaptic.trade.create({
-            alpacaAccountId: params.alpacaAccountId,
-            assetId: params.assetId,
-            qty: params.qty,
-            price: params.price,
-            total: params.total,
-            optionType: params.optionType,
-            signal: params.signal,
-            strategy: params.strategy,
-            analysis: params.analysis,
-            summary: params.summary,
-            confidence: params.confidence,
-            timestamp: params.timestamp,
-            status: params.status
-          } as types.Trade, apolloClient);
-          
+          const trade = await adaptic.trade.create(
+            {
+              alpacaAccountId: params.alpacaAccountId,
+              assetId: params.assetId,
+              qty: params.qty,
+              price: params.price,
+              total: params.total,
+              optionType: params.optionType,
+              signal: params.signal,
+              strategy: params.strategy,
+              analysis: params.analysis,
+              summary: params.summary,
+              confidence: params.confidence,
+              timestamp: params.timestamp,
+              status: params.status,
+            } as types.Trade,
+            sharedApolloClient
+          );
+
           if (trade) {
             results.push({
               success: true,
               message: `Trade created successfully with ID: ${trade.id}`,
-              timestamp: Date.now()
+              timestamp: Date.now(),
             });
           }
           break;
@@ -890,34 +942,35 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
             results.push({
               success: false,
               message: 'No active Adaptic account found',
-              timestamp: Date.now()
+              timestamp: Date.now(),
             });
             break;
           }
 
-          const trades = await fetchRecentTrades(
-            new Date(params.start_time),
-            {
-              alpacaAccountId: params.alpaca_account_id || currentAccount.id,
-              limit: params.limit,
-              sort: params.sort_field ? {
-                field: params.sort_field,
-                order: params.sort_order || 'desc'
-              } : undefined
-            }
-          );
-          
+          const trades = await fetchRecentTrades(new Date(params.start_time), {
+            alpacaAccountId: params.alpaca_account_id || currentAccount.id,
+            limit: params.limit,
+            sort: params.sort_field
+              ? {
+                  field: params.sort_field,
+                  order: params.sort_order || 'desc',
+                }
+              : undefined,
+          });
+
           results.push({
             success: true,
             message: trades ? `Successfully fetched ${trades.length} trades` : 'No trades found',
             timestamp: Date.now(),
-            data: trades
+            data: trades,
           });
           break;
         }
         case 'fetch_ticker_news': {
           let startDate = params.start ? new Date(params.start) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          const news = await adptc.av.fetchTickerNews(params.symbol, startDate, params.limit);
+          const news = await adptc.av.fetchTickerNews(params.symbol, startDate, params.limit, {
+            apiKey: process.env.ALPHA_VANTAGE_API_KEY,
+          });
           results.push(news);
           break;
         }
