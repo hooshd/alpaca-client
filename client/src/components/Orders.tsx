@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Order } from '../types';
+import { Order } from 'adaptic-utils';
 import { formatCurrency } from '../utils/formatting';
 
 interface OrdersProps {

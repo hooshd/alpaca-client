@@ -11,7 +11,7 @@ import AccountNavChart from './components/AccountNavChart';
 import Chat from './components/Chat';
 
 function App() {
-  const { accountInfo, orders, positions, error, refreshData, submitOrder, cancelOrder, patchOrder } = useAlpaca();
+  const { accountInfo, orders, positions, error, refreshData, cancelOrder, patchOrder } = useAlpaca();
 
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 

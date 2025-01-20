@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Position, Order } from '../types';
+import { Position, Order } from 'adaptic-utils';
 import { MarketHoursCalculator } from '../utils/marketTime';
 import { formatCurrency } from '../utils/formatting';
 
@@ -122,7 +122,7 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, orders = [], onClos
       </td>
       <td className="py-4 px-4">
         <div className={`${isShort ? 'text-red-600' : 'text-gray-900'}`}>
-          {formatQuantity(position.qty, position.side)}
+          {formatQuantity(position.qty, position.side as 'short' | 'long')}
         </div>
       </td>
       <td className="py-4 px-4">

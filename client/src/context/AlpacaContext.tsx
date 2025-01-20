@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AccountInfo, Order, Position } from '../types';
+import { AccountInfo } from '../types';
+import { Order, Position } from 'adaptic-utils';
 import { types } from 'adaptic-backend/server/index';
 
 interface AlpacaContextType {
@@ -12,7 +13,6 @@ interface AlpacaContextType {
   selectedAccount: types.AlpacaAccount | null;
   refreshData: () => Promise<void>;
   refreshConfig: () => Promise<void>;
-  submitOrder: (orderData: any) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
   patchOrder: (orderId: string, data: { trail?: string }) => Promise<void>;
   switchAccount: (account: types.AlpacaAccount) => Promise<void>;
@@ -117,24 +117,6 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
     }
   };
 
-  const submitOrder = async (orderData: any) => {
-    try {
-      const response = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      if (!response.ok) throw new Error('Failed to submit order');
-
-      await refreshData();
-    } catch (err) {
-      throw err;
-    }
-  };
-
   const cancelOrder = async (orderId: string) => {
     try {
       const response = await fetch(`/api/orders/${orderId}/cancel`, {
@@ -220,7 +202,6 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
     selectedAccount,
     refreshData,
     refreshConfig,
-    submitOrder,
     cancelOrder,
     patchOrder,
     switchAccount,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Position, Order } from '../types';
+import { Position, Order } from 'adaptic-utils';
 import { formatCurrency } from '../utils/formatting';
 import { useMarket } from '../context/MarketContext';
 
