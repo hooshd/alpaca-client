@@ -5,15 +5,7 @@ import { Order, Position, Asset, AccountInfo, PolygonPriceData, PolygonQuote, Si
 import adaptic, {types} from 'adaptic-backend';
 import { apolloClient } from './apollo-client';
 import { getCurrentAccount } from './accountState';
-import { 
-  EMAData, 
-  MACDData, 
-  RSIData, 
-  StochData, 
-  BollingerBandsData, 
-  SupportResistanceData, 
-  FibonacciData 
-} from 'adaptic-utils';
+import { fetchRecentTrades } from './adaptic-functions';
 
 // Initialize alpaca client instance
 let alpacaClient: AlpacaClient | null = null;
@@ -399,6 +391,40 @@ export const adapticTools: Tool[] = [
           status: { type: 'string', enum: ['PENDING', 'EXECUTED', 'CANCELED', 'FAILED'], description: 'Current status of the trade' }
         },
         required: ['alpacaAccountId', 'qty', 'price', 'total', 'signal', 'strategy', 'analysis', 'summary', 'confidence', 'timestamp', 'status']
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'fetch_recent_trades',
+      description: 'Fetch recent trades from a specified start time',
+      parameters: {
+        type: 'object',
+        properties: {
+          start_time: {
+            type: 'string',
+            description: 'ISO 8601 timestamp for the start time in UTC',
+          },
+          alpaca_account_id: {
+            type: 'string',
+            description: 'Optional Alpaca account ID to filter trades',
+          },
+          limit: {
+            type: 'number',
+            description: 'Optional maximum number of trades to return',
+          },
+          sort_field: {
+            type: 'string',
+            description: 'Optional field to sort by (e.g., createdAt, price, qty)',
+          },
+          sort_order: {
+            type: 'string',
+            enum: ['asc', 'desc'],
+            description: 'Optional sort direction',
+          },
+        },
+        required: ['start_time'],
       },
     },
   },
@@ -905,6 +931,37 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
               data: currentAccount,
             });
           }
+          break;
+        }
+        case 'fetch_recent_trades': {
+          const currentAccount = getCurrentAccount();
+          if (!currentAccount) {
+            results.push({
+              success: false,
+              message: 'No active Adaptic account found',
+              timestamp: Date.now()
+            });
+            break;
+          }
+
+          const trades = await fetchRecentTrades(
+            new Date(params.start_time),
+            {
+              alpacaAccountId: params.alpaca_account_id || currentAccount.id,
+              limit: params.limit,
+              sort: params.sort_field ? {
+                field: params.sort_field,
+                order: params.sort_order || 'desc'
+              } : undefined
+            }
+          );
+          
+          results.push({
+            success: true,
+            message: trades ? `Successfully fetched ${trades.length} trades` : 'No trades found',
+            timestamp: Date.now(),
+            data: trades
+          });
           break;
         }
         case 'fetch_ticker_news': {
