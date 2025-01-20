@@ -59,8 +59,13 @@ export const setupRoutes = (app: Express) => {
           throw new Error('Failed to verify account access');
         }
 
+        const openAiApiKey = account.user?.openaiAPIKey;
+        if (!openAiApiKey) {
+          throw new Error('OpenAI API key is not set for this account');
+        }
+
         // Initialize chat service
-        chatService = await ChatService.initialize(alpaca);
+        chatService = await ChatService.initialize(alpaca, openAiApiKey);
 
         console.log('Successfully verified Alpaca account access');
         isInitialized = true;

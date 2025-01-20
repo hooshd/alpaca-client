@@ -59,18 +59,19 @@ export class ChatService {
   private systemPrompt: string;
   private messages: (ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionSystemMessageParam | ChatCompletionFunctionMessageParam)[] = [];
 
-  private constructor(alpaca: AlpacaClient, systemPrompt: string) {
+  private constructor(alpaca: AlpacaClient, systemPrompt: string, private openAiApiKey: string) {
     this.alpaca = alpaca;
     this.systemPrompt = systemPrompt;
     this.tools = allTools;
     this.messages = [{ role: 'system', content: systemPrompt }];
+    this.openAiApiKey = openAiApiKey;
     initializeAlpacaTools(alpaca);
   }
 
-  public static async initialize(alpaca: AlpacaClient): Promise<ChatService> {
+  public static async initialize(alpaca: AlpacaClient, openAiApiKey: string): Promise<ChatService> {
     const marketStatus = await adptc.time.getMarketStatus();
     const systemPrompt = await SYSTEM_PROMPT(`Today's date is ${marketStatus.timeString} and the market is currently ${marketStatus.status.toUpperCase()}. The next status is ${marketStatus.nextStatus.toUpperCase()} at ${marketStatus.nextStatusTimeString}.`);
-    return new ChatService(alpaca, systemPrompt);
+    return new ChatService(alpaca, systemPrompt, openAiApiKey);
   }
 
   public reset(): void {
@@ -94,7 +95,8 @@ export class ChatService {
           model: OPENAI_DEFAULT_MODEL,
           tools: this.tools,
           temperature: 0.7,
-          context: this.messages
+          context: this.messages,
+          apiKey: this.openAiApiKey
         }
       );
 
@@ -148,7 +150,8 @@ export class ChatService {
         {
           model: OPENAI_DEFAULT_MODEL,
           temperature: 0.7,
-          context: this.messages
+          context: this.messages, 
+          apiKey: this.openAiApiKey
         }
       );
 
