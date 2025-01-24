@@ -41,7 +41,7 @@ function App() {
     <MarketProvider>
       <div className="bg-gray-50 min-h-screen flex flex-col items-center p-6 font-inter">
         <div className="w-full max-w-[calc(100%-10px)] bg-white shadow-lg rounded-xl p-8">
-          <h1 className="text-3xl font-semibold mb-8 text-center text-gray-800">The Money Glitch</h1>
+          <h1 className="text-3xl font-semibold mb-8 text-center text-gray-800">Alpaca/Adaptic Client</h1>
 
           {/* Account Info */}
           <AccountInfo />

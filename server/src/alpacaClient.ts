@@ -50,6 +50,11 @@ export class AlpacaClient {
     };
   }
 
+  private maskKey(key: string): string {
+    if (!key || key.length < 8) return '****';
+    return `${key.slice(0, 4)}****${key.slice(-4)}`;
+  }
+
   private async fetch<T>(
     endpoint: string,
     options: RequestInit = {},
@@ -58,28 +63,41 @@ export class AlpacaClient {
     const baseUrl = isDataEndpoint ? this.dataBaseUrl : this.accountBaseUrl;
     const headers = isDataEndpoint ? this.dataHeaders : this.headers;
 
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-      ...options,
-      headers: { ...headers, ...options.headers },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Alpaca API error for ${endpoint}:`, {
-        status: response.status,
-        statusText: response.statusText,
-        details: errorText,
+    try {
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        ...options,
+        headers: { ...headers, ...options.headers },
       });
-      throw new Error(`Alpaca API error: ${response.status} ${response.statusText}. Details: ${errorText}`);
-    }
 
-    // Handle empty response
-    if (response.status === 204) {
-      // No Content
-      return undefined;
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        const headersObj = headers as Record<string, string>;
+        console.error(`Alpaca API error for ${endpoint}:`, {
+          status: response.status,
+          statusText: response.statusText,
+          details: errorText,
+          keyId: this.maskKey(headersObj['APCA-API-KEY-ID']),
+          secretKey: this.maskKey(headersObj['APCA-API-SECRET-KEY']),
+        });
+        throw new Error(`Alpaca API error: ${response.status} ${response.statusText}. Details: ${errorText}`);
+      }
 
-    return response.json();
+      // Handle empty response
+      if (response.status === 204) {
+        return undefined;
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
+        const headersObj = headers as Record<string, string>;
+        console.error('Connection refused using credentials:', {
+          keyId: this.maskKey(headersObj['APCA-API-KEY-ID']),
+          secretKey: this.maskKey(headersObj['APCA-API-SECRET-KEY']),
+        });
+      }
+      throw error;
+    }
   }
 
   async getAccount(): Promise<AccountInfo | undefined> {
