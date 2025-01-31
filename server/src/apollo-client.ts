@@ -7,7 +7,7 @@ let apolloClient: ApolloClient<NormalizedCacheObject> | null = null;
 function initializeApollo(): ApolloClient<NormalizedCacheObject> {
   const isProduction = process.env.NODE_ENV === 'production';
   const httpUrl = isProduction
-    ? process.env.BACKEND_HTTPS_URL || 'https://api.adaptic.ai/graphql'
+    ? process.env.BACKEND_HTTPS_URL || 'https://adaptic-backend-production.up.railway.app/graphql'
     : 'http://localhost:4000/graphql';
 
   const httpLink = new HttpLink({ uri: httpUrl, fetch });

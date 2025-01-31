@@ -18,6 +18,6 @@
   },
   "dependencies": {
     "@types/recharts": "^1.8.29",
-    "recharts": "^2.15.0"
+    "recharts": "^2.15.1"
   }
 }
