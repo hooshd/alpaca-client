@@ -18,9 +18,9 @@ export const AccountInfo: React.FC = () => {
       </h2>
 
       {/* Account Selection Dropdown */}
-      <div className="mb-4">
+      <div className="mb-4 flex gap-2">
         <select
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          className="w-[80%] p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
           value={selectedAccount?.user?.email || ''}
           onChange={handleAccountChange}
         >
@@ -30,6 +30,23 @@ export const AccountInfo: React.FC = () => {
             </option>
           ))}
         </select>
+        <button
+          className="w-[20%] bg-indigo-600 text-white rounded-md px-4 py-2 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          onClick={async () => {
+            try {
+              const response = await fetch('/api/account/refresh', {
+                method: 'POST',
+              });
+              if (!response.ok) throw new Error('Failed to refresh accounts');
+              const data = await response.json();
+              switchAccount(data.accounts[0]);
+            } catch (err) {
+              console.error('Error refreshing accounts:', err);
+            }
+          }}
+        >
+          Re-fetch
+        </button>
       </div>
 
       {/* Account Details */}

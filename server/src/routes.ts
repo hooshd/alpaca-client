@@ -104,7 +104,7 @@ export const setupRoutes = (app: Express) => {
   };
 
   // Refresh accounts
-  app.post('/api/config/refresh', async (_req: Request, res: Response) => {
+  app.post('/api/account/refresh', async (_req: Request, res: Response) => {
     try {
       console.log('Refreshing accounts from Adaptic...');
       const accounts = await fetchAllLiveAlpacaAccounts();
@@ -116,14 +116,14 @@ export const setupRoutes = (app: Express) => {
       }
 
       res.json({
-        message: 'Config refreshed successfully',
         accounts,
+        message: 'Accounts refreshed successfully'
       });
     } catch (error: any) {
-      console.error('Error refreshing config:', error);
+      console.error('Error refreshing accounts:', error);
       res.status(500).json({
-        error: `Failed to refresh config: ${error?.message || 'Unknown error'}`,
-        needsInitialization: !isInitialized,
+        error: `Failed to refresh accounts: ${error?.message || 'Unknown error'}`,
+        needsInitialization: !isInitialized
       });
     }
   });
@@ -132,7 +132,7 @@ export const setupRoutes = (app: Express) => {
   app.get('/api/accounts', async (_req: Request, res: Response) => {
     try {
       // Use the refresh endpoint internally
-      const response = await fetch(`http://localhost:${process.env.PORT || 3001}/api/config/refresh`, {
+      const response = await fetch(`http://localhost:${process.env.PORT || 3001}/api/account/refresh`, {
         method: 'POST',
       });
 
