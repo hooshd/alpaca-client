@@ -43,10 +43,10 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
 
   const refreshConfig = async () => {
     try {
-      const response = await fetch('/api/config/refresh', {
+      const response = await fetch('/api/account/refresh', {
         method: 'POST',
       });
-      if (!response.ok) throw new Error('Failed to refresh config');
+      if (!response.ok) throw new Error('Failed to refresh accounts');
       const data = await response.json();
       setAvailableAccounts(data.accounts);
       if (data.accounts.length > 0 && !selectedAccount) {
@@ -54,7 +54,7 @@ export const AlpacaProvider: React.FC<AlpacaProviderProps> = ({ children }) => {
       }
       return data.accounts;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh config');
+      setError(err instanceof Error ? err.message : 'Failed to refresh accounts');
       throw err;
     }
   };
