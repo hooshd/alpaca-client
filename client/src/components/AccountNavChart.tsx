@@ -12,28 +12,37 @@ const AccountNavChart = () => {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [period, setPeriod] = useState<string>('1D'); // Default period
 
-  // Filter data points to 30-minute intervals for 1D view
-  const filterDataPoints = (data: ChartData[]) => {
-    if (period !== '1D') return data;
-    
-    return data.filter((_, index) => index % 6 === 0); // Every 6th point (30 min intervals)
+  const smoothData = (data: ChartData[]) => {
+    if (data.length < 2) return data;
+
+    const smoothed = [data[0]];
+    for (let i = 1; i < data.length; i++) {
+      const prev = smoothed[i - 1];
+      const curr = data[i];
+      smoothed.push({
+        time: curr.time,
+        equity: (prev.equity + curr.equity) / 2,
+      });
+    }
+    return smoothed;
   };
 
   useEffect(() => {
     const fetchPortfolioHistory = async () => {
       try {
-        const timeframe = period === '1D' ? '5Min' : '1H'; // Set timeframe based on period
+        const timeframe = period === '1D' ? '1Min' : '1H'; // Changed to 1Min for 1D view
         const response = await fetch(`/api/account/portfolio/history?period=${period}&timeframe=${timeframe}&intraday_reporting=market_hours`);
         if (!response.ok) throw new Error('Failed to fetch portfolio history');
         const data = await response.json();
-        console.log('Fetched data:', data); // Debugging log
         let formattedData = data.timestamp.map((time: number, index: number) => ({
           time: new Date(time * 1000).toLocaleString('en-US', { timeZone: 'America/New_York' }),
           equity: data.equity[index],
         }));
         
-        // Apply data filtering for 1D view
-        formattedData = filterDataPoints(formattedData);
+        // Apply smoothing for 1D view
+        if (period === '1D') {
+          formattedData = smoothData(formattedData);
+        }
         
         setChartData(formattedData);
       } catch (err) {
@@ -90,7 +99,7 @@ const AccountNavChart = () => {
   if (error) return <div>Error fetching data: {error}</div>;
 
   return (
-    <div className="w-full h-64 mb-16"> {/* Increased margin here */}
+    <div className="w-full h-64 mb-16">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-medium text-gray-700 mb-6">Account NAV Chart</h2>
         <div className="flex space-x-4">
@@ -134,9 +143,9 @@ const AccountNavChart = () => {
                   hour12: true 
                 });
               }
-              return `${date.getDate()}/${date.getMonth() + 1}`; // d/m format
+              return `${date.getDate()}/${date.getMonth() + 1}`;
             }}
-            interval={period === '1D' ? 5 : 'preserveStartEnd'} // Show fewer ticks for 1D view
+            interval={period === '1D' ? 5 : 'preserveStartEnd'}
           />
           <YAxis 
             domain={yAxisDomain as [number, number]}
@@ -154,12 +163,21 @@ const AccountNavChart = () => {
             dataKey="equity" 
             stroke="#4A90E2" 
             strokeWidth={2} 
-            dot={period === '1D'} // Only show dots in 1D view
-            label={period === '1D' ? { 
-              position: 'top', 
-              formatter: (value: number) => formatCurrency(value),
-              fontSize: 10
-            } : false} 
+            dot={false}
+            label={{
+              position: 'right',
+              content: ({x, y, value}: {x: number, y: number, value: number}) => {
+                const lastPoint = chartData[chartData.length - 1];
+                if (lastPoint && value === lastPoint.equity) {
+                  return (
+                    <text x={x} y={y} dy={-10} fill="#4A90E2" fontSize={12} textAnchor="middle">
+                      {formatCurrency(value)}
+                    </text>
+                  );
+                }
+                return null;
+              }
+            }}
           />
         </LineChart>
       </ResponsiveContainer>
