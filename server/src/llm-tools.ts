@@ -3,10 +3,12 @@ import { adaptic as adptc, Order, Position } from 'adaptic-utils';
 import { AlpacaClient } from './alpacaClient';
 import { Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData } from './types';
 import adaptic, { types } from 'adaptic-backend';
-import { sharedApolloClient } from './apollo-client';
 import { getCurrentAccount } from './accountState';
 import { fetchRecentTrades } from './adaptic-functions';
 import 'dotenv/config';
+
+import { getApolloClient } from 'adaptic-backend/client';
+
 
 // Initialize alpaca client instance
 let alpacaClient: AlpacaClient | null = null;
@@ -886,6 +888,7 @@ export async function executeToolCall(toolCalls: ChatCompletionMessageToolCall[]
           break;
         }
         case 'create_adaptic_trade': {
+          const apolloClient = await getApolloClient();
           const trade = await adaptic.trade.create(
             {
               alpacaAccountId: params.alpacaAccountId,
@@ -902,7 +905,7 @@ export async function executeToolCall(toolCalls: ChatCompletionMessageToolCall[]
               timestamp: params.timestamp,
               status: params.status,
             } as types.Trade,
-            sharedApolloClient
+            apolloClient
           );
 
           if (trade) {

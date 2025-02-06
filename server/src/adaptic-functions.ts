@@ -3,11 +3,12 @@
  **********************************************************************************/
 
 import adaptic, { types } from 'adaptic-backend';
+import { getApolloClient } from 'adaptic-backend/client';
 import { adaptic as adapticUtils, AssetOverviewResponse } from 'adaptic-utils';
 import { ApolloClient, ApolloError, gql, NormalizedCacheObject } from '@apollo/client';   
-import { sharedApolloClient } from './apollo-client';
 
 export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[]> => {
+  const apolloClient = await getApolloClient();
   try {
     const selectionSet = `
       id
@@ -31,7 +32,7 @@ export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[
       userId
     `;
 
-    const accounts = (await sharedApolloClient.query({
+    const accounts = (await apolloClient.query({
       query: gql`
         query {
           alpacaAccounts (where: { marketOpen: {equals: true} }) {
@@ -244,6 +245,7 @@ export const fetchRecentTrades = async (
     };
   }
 ): Promise<types.Trade[] | null> => {
+  const apolloClient = await getApolloClient();
   const { alpacaAccountId, limit, sort } = options || {};
   try {
     const nowUtc = new Date();
@@ -261,7 +263,7 @@ export const fetchRecentTrades = async (
         limit,
         sort,
       } as unknown as TradeQueryProps,
-      sharedApolloClient
+      apolloClient
     );
 
     if (trades && trades?.length > 0) {
