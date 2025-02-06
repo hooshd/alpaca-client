@@ -4,7 +4,7 @@
 
 import adaptic, { types } from 'adaptic-backend';
 import { adaptic as adapticUtils, AssetOverviewResponse } from 'adaptic-utils';
-import { ApolloClient, NormalizedCacheObject } from '@apollo/client';   
+import { ApolloClient, ApolloError, gql, NormalizedCacheObject } from '@apollo/client';   
 import { sharedApolloClient } from './apollo-client';
 
 export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[]> => {
@@ -32,7 +32,7 @@ export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[
     `;
 
     const accounts = (await sharedApolloClient.query({
-      query: adapticUtils.apollo.gql`
+      query: gql`
         query {
           alpacaAccounts (where: { marketOpen: {equals: true} }) {
             ${selectionSet}
@@ -184,7 +184,7 @@ adaptic.trade.findMany = async function (
     }
     `;
 
-  const FIND_MANY_TRADE = adapticUtils.apollo.gql`
+  const FIND_MANY_TRADE = gql`
     query findManyTrade(
       $where: TradeWhereInput!
       $orderBy: [TradeOrderByWithRelationInput!]
@@ -223,7 +223,7 @@ adaptic.trade.findMany = async function (
       throw new Error(response.errors[0].message);
     return response.data?.trades ?? [];
   } catch (error) {
-    if (error instanceof adapticUtils.apollo.ApolloError && 
+    if (error instanceof ApolloError && 
         error.message === 'No Trade object found') {
       return null;
     } else {

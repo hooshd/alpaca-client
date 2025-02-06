@@ -1,4 +1,4 @@
-import { types } from 'adaptic-backend/server/index';
+import { types } from 'adaptic-backend';
 export type AlpacaAccount = types.AlpacaAccount;
 
 export interface Asset {

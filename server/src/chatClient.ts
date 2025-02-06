@@ -1,7 +1,8 @@
-import { lumic, Tool, LLMResponse } from 'lumic-utility-functions';
+import { lumic, LLMResponse } from 'lumic-utility-functions';
 import { allTools, executeToolCall, initializeAlpacaTools } from './llm-tools';
 import { AlpacaClient } from './alpacaClient';
 import { adaptic as adptc} from 'adaptic-utils';
+import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import { 
   ChatCompletionMessageParam, 
   ChatCompletionFunctionMessageParam, 
@@ -60,7 +61,7 @@ Hints for answering requests:
 
 export class ChatService {
   private alpaca: AlpacaClient;
-  private tools: Tool[];
+  private tools: ChatCompletionTool[];
   private systemPrompt: string;
   private messages: (ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionSystemMessageParam | ChatCompletionFunctionMessageParam)[] = [];
 

@@ -1,4 +1,4 @@
-import { Tool, ToolCall } from 'lumic-utility-functions';
+import {ChatCompletionMessageToolCall, ChatCompletionTool} from 'openai/resources/chat/completions';
 import { adaptic as adptc, Order, Position } from 'adaptic-utils';
 import { AlpacaClient } from './alpacaClient';
 import { Asset, AccountInfo, PolygonPriceData, PolygonQuote, SimplifiedPriceData } from './types';
@@ -16,7 +16,7 @@ export function initializeAlpacaTools(client: AlpacaClient) {
 }
 
 // Define polygon tools
-export const polygonTools: Tool[] = [
+export const polygonTools: ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -148,7 +148,7 @@ export const polygonTools: Tool[] = [
 ];
 
 // Define all available Alpaca tools
-export const alpacaTools: Tool[] = [
+export const alpacaTools: ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -322,7 +322,7 @@ export const alpacaTools: Tool[] = [
   },
 ];
 
-export const adapticTools: Tool[] = [
+export const adapticTools: ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -439,7 +439,7 @@ export const adapticTools: Tool[] = [
   },
 ];
 
-export const alphaVantageTools: Tool[] = [
+export const alphaVantageTools: ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -467,7 +467,7 @@ export const alphaVantageTools: Tool[] = [
   },
 ];
 
-export const taTools: Tool[] = [
+export const taTools: ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -716,7 +716,7 @@ export const taTools: Tool[] = [
 ];
 
 // Combine Alpaca, Polygon, and Alpha Vantage tools
-export const allTools: Tool[] = [...alpacaTools, ...polygonTools, ...alphaVantageTools, ...adapticTools];
+export const allTools: ChatCompletionTool[] = [...alpacaTools, ...polygonTools, ...alphaVantageTools, ...adapticTools];
 
 // Helper function to convert ISO 8601 to Unix milliseconds
 function convertISO8601TimeToUnixMilliseconds(t: string): number {
@@ -744,7 +744,7 @@ type ToolCallResult =
   | any; // For generic API responses
 
 // Function to execute tool calls
-export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallResult[]> {
+export async function executeToolCall(toolCalls: ChatCompletionMessageToolCall[]): Promise<ToolCallResult[]> {
   if (!alpacaClient) {
     throw new Error('Alpaca client not initialized');
   }
@@ -964,9 +964,12 @@ export async function executeToolCall(toolCalls: ToolCall[]): Promise<ToolCallRe
         }
         case 'fetch_ticker_news': {
           let startDate = params.start ? new Date(params.start) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          const news = await adptc.av.fetchTickerNews(params.symbol, startDate, params.limit, {
+          const news = await adptc.av.fetchTickerNews(params.symbol, {
             apiKey: process.env.ALPHA_VANTAGE_API_KEY,
+            start: startDate,
+            limit: params.limit,
           });
+
           results.push(news);
           break;
         }
