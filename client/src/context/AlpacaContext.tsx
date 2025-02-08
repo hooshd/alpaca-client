@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AccountInfo } from '../types';
 import { Order, Position } from 'adaptic-utils';
-import { types } from 'adaptic-backend/server/index';
+import { types } from 'adaptic-backend';
 
 interface AlpacaContextType {
   accountInfo: AccountInfo | null;

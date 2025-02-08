@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, LabelProps } from 'recharts';
 import { useAlpaca } from '../context/AlpacaContext';
 
 interface ChartData {
@@ -166,9 +166,10 @@ const AccountNavChart = () => {
             dot={false}
             label={{
               position: 'right',
-              content: ({x, y, value}: {x: number, y: number, value: number}) => {
+              content: (props: LabelProps) => {
+                const { x, y, value } = props;
                 const lastPoint = chartData[chartData.length - 1];
-                if (lastPoint && value === lastPoint.equity) {
+                if (lastPoint && value === lastPoint.equity && typeof x === 'number' && typeof y === 'number') {
                   return (
                     <text x={x} y={y} dy={-10} fill="#4A90E2" fontSize={12} textAnchor="middle">
                       {formatCurrency(value)}

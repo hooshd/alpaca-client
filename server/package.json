@@ -9,12 +9,12 @@
     "test": "ts-node src/test.ts"
   },
   "dependencies": {
-    "adaptic-backend": "^1.0.301",
-    "adaptic-utils": "^0.0.236",
+    "adaptic-backend": "^1.0.305",
+    "adaptic-utils": "^0.0.242",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "lumic-utility-functions": "^1.0.60"
+    "lumic-utility-functions": "^1.0.61"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
