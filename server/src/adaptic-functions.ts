@@ -18,9 +18,6 @@ export const fetchAllLiveAlpacaAccounts = async (): Promise<types.AlpacaAccount[
       configuration
       marketOpen
       realTime
-      minOrderSize
-      maxOrderSize
-      minPercentageChange
       volumeThreshold
       user {
         id
