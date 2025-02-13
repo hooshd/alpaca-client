@@ -904,7 +904,7 @@ export async function executeToolCall(toolCalls: ChatCompletionMessageToolCall[]
               confidence: params.confidence,
               timestamp: params.timestamp,
               status: params.status,
-            } as types.Trade,
+            } as unknown as types.Trade,
             apolloClient
           );
 
